@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>血糖追蹤記錄系統 | Billion Studio</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -325,7 +331,6 @@
     <div class="container">
         <div class="header">
             <h1>🩸 血糖追蹤記錄系統</h1>
-            <p>Billion Studio - 輕鬆管理您的血糖健康</p>
         </div>
 
         <div class="card">
@@ -408,6 +413,22 @@
     </div>
 
     <script>
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyA156hYpzmkKOkwfruueSAOwPsBiZdEyFg",
+            authDomain: "glucose-tracker-1ce2d.firebaseapp.com",
+            projectId: "glucose-tracker-1ce2d",
+            storageBucket: "glucose-tracker-1ce2d.firebasestorage.app",
+            messagingSenderId: "156879055080",
+            appId: "1:156879055080:web:23495e17dd2def5765c15d"
+        };
+
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
         let currentUnit = 'mmol/L';
         let selectedTiming = null;
 
@@ -418,9 +439,23 @@
             document.getElementById('date').valueAsDate = now;
             document.getElementById('time').value = now.toTimeString().slice(0, 5);
 
-            // 載入記錄
-            loadRecords();
-            updateStats();
+            // 匿名登入
+            auth.signInAnonymously().then(() => {
+                console.log('已匿名登入');
+            }).catch((error) => {
+                console.error('登入失敗:', error);
+            });
+
+            // 監聽認證狀態
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    loadRecords();
+                    updateStats();
+                } else {
+                    currentUser = null;
+                }
+            });
 
             // 時間點按鈕事件
             document.querySelectorAll('.timing-btn').forEach(btn => {
@@ -463,50 +498,80 @@
             return value;
         }
 
-        // 儲存記錄
-        function saveRecord() {
+        // 儲存記錄到 Firebase
+        async function saveRecord() {
             if (!selectedTiming) {
                 alert('請選擇測量時間點');
                 return;
             }
 
+            if (!currentUser) {
+                alert('請稍候，正在連接...');
+                return;
+            }
+
             const record = {
-                id: Date.now(),
+                userId: currentUser.uid,
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
                 value: parseFloat(document.getElementById('value').value),
                 unit: currentUnit,
                 timing: selectedTiming,
                 notes: document.getElementById('notes').value,
-                createdAt: new Date().toISOString()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // 取得現有記錄
-            let records = JSON.parse(localStorage.getItem('glucoseRecords') || '[]');
-            records.unshift(record); // 新記錄放在最前面
-            localStorage.setItem('glucoseRecords', JSON.stringify(records));
+            try {
+                await db.collection('glucoseRecords').add(record);
 
-            // 重置表單
-            document.getElementById('glucoseForm').reset();
-            document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
-            selectedTiming = null;
-            
-            // 重新設定日期時間
-            const now = new Date();
-            document.getElementById('date').valueAsDate = now;
-            document.getElementById('time').value = now.toTimeString().slice(0, 5);
+                // 重置表單
+                document.getElementById('glucoseForm').reset();
+                document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
+                selectedTiming = null;
+                
+                // 重新設定日期時間
+                const now = new Date();
+                document.getElementById('date').valueAsDate = now;
+                document.getElementById('time').value = now.toTimeString().slice(0, 5);
 
-            // 重新載入列表
-            loadRecords();
-            updateStats();
+                // 重新載入列表
+                loadRecords();
+                updateStats();
 
-            // 顯示成功訊息
-            alert('✅ 記錄已成功儲存！');
+                // 顯示成功訊息
+                alert('✅ 記錄已成功儲存！');
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                alert('❌ 儲存失敗，請稍後再試');
+            }
         }
 
-        // 載入記錄
+        // 從 Firebase 載入記錄
         function loadRecords() {
-            const records = JSON.parse(localStorage.getItem('glucoseRecords') || '[]');
+            if (!currentUser) return;
+
+            db.collection('glucoseRecords')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then((querySnapshot) => {
+                    const records = [];
+                    querySnapshot.forEach((doc) => {
+                        records.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    displayRecords(records);
+                })
+                .catch((error) => {
+                    console.error('載入失敗:', error);
+                });
+        }
+
+        // 顯示記錄
+        function displayRecords(records) {
             const container = document.getElementById('recordsList');
 
             if (records.length === 0) {
@@ -540,7 +605,7 @@
                             </div>
                         </div>
                         <div class="record-actions">
-                            <button class="btn-delete" onclick="deleteRecord(${record.id})">刪除</button>
+                            <button class="btn-delete" onclick="deleteRecord('${record.id}')">刪除</button>
                         </div>
                     </div>
                 `;
@@ -578,36 +643,51 @@
         }
 
         // 刪除記錄
-        function deleteRecord(id) {
+        async function deleteRecord(id) {
             if (!confirm('確定要刪除這筆記錄嗎？')) return;
 
-            let records = JSON.parse(localStorage.getItem('glucoseRecords') || '[]');
-            records = records.filter(r => r.id !== id);
-            localStorage.setItem('glucoseRecords', JSON.stringify(records));
-
-            loadRecords();
-            updateStats();
+            try {
+                await db.collection('glucoseRecords').doc(id).delete();
+                loadRecords();
+                updateStats();
+            } catch (error) {
+                console.error('刪除失敗:', error);
+                alert('❌ 刪除失敗，請稍後再試');
+            }
         }
 
         // 更新統計
         function updateStats() {
-            const records = JSON.parse(localStorage.getItem('glucoseRecords') || '[]');
+            if (!currentUser) return;
 
-            if (records.length === 0) {
-                document.getElementById('avgValue').textContent = '-';
-                document.getElementById('maxValue').textContent = '-';
-                document.getElementById('minValue').textContent = '-';
-                return;
-            }
+            db.collection('glucoseRecords')
+                .where('userId', '==', currentUser.uid)
+                .get()
+                .then((querySnapshot) => {
+                    const records = [];
+                    querySnapshot.forEach((doc) => {
+                        records.push(doc.data());
+                    });
 
-            const values = records.map(r => convertUnit(r.value, r.unit, currentUnit));
-            const avg = values.reduce((a, b) => a + b, 0) / values.length;
-            const max = Math.max(...values);
-            const min = Math.min(...values);
+                    if (records.length === 0) {
+                        document.getElementById('avgValue').textContent = '-';
+                        document.getElementById('maxValue').textContent = '-';
+                        document.getElementById('minValue').textContent = '-';
+                        return;
+                    }
 
-            document.getElementById('avgValue').textContent = avg.toFixed(1);
-            document.getElementById('maxValue').textContent = max.toFixed(1);
-            document.getElementById('minValue').textContent = min.toFixed(1);
+                    const values = records.map(r => convertUnit(r.value, r.unit, currentUnit));
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    const max = Math.max(...values);
+                    const min = Math.min(...values);
+
+                    document.getElementById('avgValue').textContent = avg.toFixed(1);
+                    document.getElementById('maxValue').textContent = max.toFixed(1);
+                    document.getElementById('minValue').textContent = min.toFixed(1);
+                })
+                .catch((error) => {
+                    console.error('統計載入失敗:', error);
+                });
         }
     </script>
 </body>
