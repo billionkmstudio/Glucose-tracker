@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血糖追蹤記錄系統 | Billion Studio</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .timing-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .timing-btn {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .timing-btn:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .timing-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .records-list {
+            margin-top: 20px;
+        }
+
+        .record-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 5px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .record-item.high {
+            border-left-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .record-item.low {
+            border-left-color: #f39c12;
+            background: #fffbf0;
+        }
+
+        .record-item.normal {
+            border-left-color: #27ae60;
+            background: #f0fff4;
+        }
+
+        .record-info {
+            flex: 1;
+        }
+
+        .record-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .record-value .unit {
+            font-size: 16px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .record-details {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .record-timing {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-delete {
+            padding: 8px 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .unit-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .unit-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timing-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🩸 血糖追蹤記錄系統</h1>
+        </div>
+
+        <div class="card">
+            <h2>📝 記錄血糖數值</h2>
+            
+            <div class="unit-toggle">
+                <button class="unit-btn active" onclick="switchUnit('mmol/L')">mmol/L</button>
+                <button class="unit-btn" onclick="switchUnit('mg/dL')">mg/dL</button>
+            </div>
+
+            <form id="glucoseForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">時間</label>
+                        <input type="time" id="time" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="value">血糖值 (<span id="currentUnit">mmol/L</span>)</label>
+                    <input type="number" id="value" step="0.1" min="0" placeholder="請輸入血糖數值" required>
+                </div>
+
+                <div class="form-group">
+                    <label>測量時間點</label>
+                    <div class="timing-buttons">
+                        <button type="button" class="timing-btn" data-timing="fasting">空腹</button>
+                        <button type="button" class="timing-btn" data-timing="before_meal">飯前</button>
+                        <button type="button" class="timing-btn" data-timing="after_meal">飯後2小時</button>
+                        <button type="button" class="timing-btn" data-timing="bedtime">睡前</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">備註（選填）</label>
+                    <textarea id="notes" placeholder="記錄飲食、運動或其他影響因素..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary">💾 儲存記錄</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📊 統計摘要</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="avgValue">-</div>
+                    <div class="stat-label">平均值</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="maxValue">-</div>
+                    <div class="stat-label">最高值</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="minValue">-</div>
+                    <div class="stat-label">最低值</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 記錄列表</h2>
+            <div id="recordsList" class="records-list">
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p>尚無記錄，開始記錄您的第一筆血糖數值吧！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 Billion Studio | 健康管理工具系列</p>
+        </div>
+    </div>
+
+    <script>
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyA156hYpzmkKOkwfruueSAOwPsBiZdEyFg",
+            authDomain: "glucose-tracker-1ce2d.firebaseapp.com",
+            projectId: "glucose-tracker-1ce2d",
+            storageBucket: "glucose-tracker-1ce2d.firebasestorage.app",
+            messagingSenderId: "156879055080",
+            appId: "1:156879055080:web:23495e17dd2def5765c15d"
+        };
+
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+        let currentUnit = 'mmol/L';
+        let selectedTiming = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 設定今天日期和當前時間
+            const now = new Date();
+            document.getElementById('date').valueAsDate = now;
+            document.getElementById('time').value = now.toTimeString().slice(0, 5);
+
+            // 匿名登入
+            auth.signInAnonymously().then(() => {
+                console.log('已匿名登入');
+            }).catch((error) => {
+                console.error('登入失敗:', error);
+            });
+
+            // 監聽認證狀態
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    loadRecords();
+                    updateStats();
+                } else {
+                    currentUser = null;
+                }
+            });
+
+            // 時間點按鈕事件
+            document.querySelectorAll('.timing-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTiming = this.dataset.timing;
+                });
+            });
+
+            // 表單提交
+            document.getElementById('glucoseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveRecord();
+            });
+        });
+
+        // 切換單位
+        function switchUnit(unit) {
+            currentUnit = unit;
+            document.getElementById('currentUnit').textContent = unit;
+            document.querySelectorAll('.unit-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === unit);
+            });
+            
+            // 重新載入記錄以顯示新單位
+            loadRecords();
+            updateStats();
+        }
+
+        // 單位轉換
+        function convertUnit(value, fromUnit, toUnit) {
+            if (fromUnit === toUnit) return value;
+            if (fromUnit === 'mmol/L' && toUnit === 'mg/dL') {
+                return value * 18;
+            }
+            if (fromUnit === 'mg/dL' && toUnit === 'mmol/L') {
+                return value / 18;
+            }
+            return value;
+        }
+
+        // 儲存記錄到 Firebase
+        async function saveRecord() {
+            if (!selectedTiming) {
+                alert('請選擇測量時間點');
+                return;
+            }
+
+            if (!currentUser) {
+                alert('請稍候，正在連接...');
+                return;
+            }
+
+            const record = {
+                userId: currentUser.uid,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                value: parseFloat(document.getElementById('value').value),
+                unit: currentUnit,
+                timing: selectedTiming,
+                notes: document.getElementById('notes').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection('glucoseRecords').add(record);
+
+                // 重置表單
+                document.getElementById('glucoseForm').reset();
+                document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
+                selectedTiming = null;
+                
+                // 重新設定日期時間
+                const now = new Date();
+                document.getElementById('date').valueAsDate = now;
+                document.getElementById('time').value = now.toTimeString().slice(0, 5);
+
+                // 重新載入列表
+                loadRecords();
+                updateStats();
+
+                // 顯示成功訊息
+                alert('✅ 記錄已成功儲存！');
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                alert('❌ 儲存失敗，請稍後再試');
+            }
+        }
+
+        // 從 Firebase 載入記錄
+        function loadRecords() {
+            if (!currentUser) return;
+
+            db.collection('glucoseRecords')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then((querySnapshot) => {
+                    const records = [];
+                    querySnapshot.forEach((doc) => {
+                        records.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    displayRecords(records);
+                })
+                .catch((error) => {
+                    console.error('載入失敗:', error);
+                });
+        }
+
+        // 顯示記錄
+        function displayRecords(records) {
+            const container = document.getElementById('recordsList');
+
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>尚無記錄，開始記錄您的第一筆血糖數值吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = records.map(record => {
+                const displayValue = convertUnit(record.value, record.unit, currentUnit);
+                const status = getGlucoseStatus(displayValue, currentUnit, record.timing);
+                const timingText = getTimingText(record.timing);
+
+                return `
+                    <div class="record-item ${status}">
+                        <div class="record-info">
+                            <div class="record-value">
+                                ${displayValue.toFixed(1)} 
+                                <span class="unit">${currentUnit}</span>
+                            </div>
+                            <div class="record-details">
+                                <span class="record-timing">${timingText}</span>
+                                📅 ${record.date} ${record.time}
+                                ${record.notes ? `<br>📝 ${record.notes}` : ''}
+                            </div>
+                        </div>
+                        <div class="record-actions">
+                            <button class="btn-delete" onclick="deleteRecord('${record.id}')">刪除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 判斷血糖狀態
+        function getGlucoseStatus(value, unit, timing) {
+            let mmolValue = unit === 'mmol/L' ? value : value / 18;
+
+            if (timing === 'fasting') {
+                if (mmolValue < 4.0) return 'low';
+                if (mmolValue >= 4.0 && mmolValue <= 6.0) return 'normal';
+                return 'high';
+            } else if (timing === 'after_meal') {
+                if (mmolValue < 4.0) return 'low';
+                if (mmolValue <= 7.8) return 'normal';
+                return 'high';
+            } else {
+                if (mmolValue < 4.0) return 'low';
+                if (mmolValue <= 7.0) return 'normal';
+                return 'high';
+            }
+        }
+
+        // 取得時間點文字
+        function getTimingText(timing) {
+            const texts = {
+                'fasting': '空腹',
+                'before_meal': '飯前',
+                'after_meal': '飯後2小時',
+                'bedtime': '睡前'
+            };
+            return texts[timing] || timing;
+        }
+
+        // 刪除記錄
+        async function deleteRecord(id) {
+            if (!confirm('確定要刪除這筆記錄嗎？')) return;
+
+            try {
+                await db.collection('glucoseRecords').doc(id).delete();
+                loadRecords();
+                updateStats();
+            } catch (error) {
+                console.error('刪除失敗:', error);
+                alert('❌ 刪除失敗，請稍後再試');
+            }
+        }
+
+        // 更新統計
+        function updateStats() {
+            if (!currentUser) return;
+
+            db.collection('glucoseRecords')
+                .where('userId', '==', currentUser.uid)
+                .get()
+                .then((querySnapshot) => {
+                    const records = [];
+                    querySnapshot.forEach((doc) => {
+                        records.push(doc.data());
+                    });
+
+                    if (records.length === 0) {
+                        document.getElementById('avgValue').textContent = '-';
+                        document.getElementById('maxValue').textContent = '-';
+                        document.getElementById('minValue').textContent = '-';
+                        return;
+                    }
+
+                    const values = records.map(r => convertUnit(r.value, r.unit, currentUnit));
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    const max = Math.max(...values);
+                    const min = Math.min(...values);
+
+                    document.getElementById('avgValue').textContent = avg.toFixed(1);
+                    document.getElementById('maxValue').textContent = max.toFixed(1);
+                    document.getElementById('minValue').textContent = min.toFixed(1);
+                })
+                .catch((error) => {
+                    console.error('統計載入失敗:', error);
+                });
+        }
+    </script>
+</body>
+</html>
