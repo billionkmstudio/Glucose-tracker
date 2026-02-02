@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>血糖追蹤記錄系統 | Billion Studio</title>
+    <title>血糖追蹤記錄系統 | Glucose Tracker</title>
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <style>
         * {
@@ -36,17 +36,13 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             margin-bottom: 20px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
             color: #667eea;
             font-size: 28px;
             margin-bottom: 5px;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 14px;
         }
 
         .card {
@@ -304,28 +300,6 @@
             border-color: #667eea;
         }
 
-        @media (max-width: 600px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .timing-buttons {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 30px;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
         /* 登入頁面樣式 */
         .login-page {
             min-height: 100vh;
@@ -378,6 +352,7 @@
             font-weight: 600;
             color: #666;
             transition: all 0.3s;
+            margin-bottom: -2px;
         }
 
         .tab-btn.active {
@@ -416,11 +391,27 @@
             background: #c0392b;
         }
 
-        .header {
-            position: relative;
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 14px;
+            opacity: 0.9;
         }
 
         @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timing-buttons {
+                grid-template-columns: 1fr;
+            }
+
             .login-container {
                 padding: 30px 20px;
             }
@@ -458,7 +449,7 @@
                     <label for="loginPassword">密碼</label>
                     <input type="password" id="loginPassword" placeholder="請輸入密碼" required>
                 </div>
-                <button class="btn-primary" onclick="loginUser()">登入</button>
+                <button type="button" class="btn-primary" onclick="loginUser()">登入</button>
                 <p class="error-message" id="loginError"></p>
             </div>
 
@@ -476,7 +467,7 @@
                     <label for="registerPasswordConfirm">確認密碼</label>
                     <input type="password" id="registerPasswordConfirm" placeholder="再次輸入密碼" required>
                 </div>
-                <button class="btn-primary" onclick="registerUser()">註冊</button>
+                <button type="button" class="btn-primary" onclick="registerUser()">註冊</button>
                 <p class="error-message" id="registerError"></p>
             </div>
         </div>
@@ -497,7 +488,7 @@
                 <button class="unit-btn" onclick="switchUnit('mg/dL')">mg/dL</button>
             </div>
 
-            <form id="glucoseForm">
+            <form id="glucoseForm" onsubmit="return false;">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="date">日期</label>
@@ -529,7 +520,7 @@
                     <textarea id="notes" placeholder="記錄飲食、運動或其他影響因素..."></textarea>
                 </div>
 
-                <button type="submit" class="btn-primary">💾 儲存記錄</button>
+                <button type="button" class="btn-primary" onclick="saveRecord()">💾 儲存記錄</button>
             </form>
         </div>
 
@@ -580,27 +571,31 @@
         };
 
         // 初始化 Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        let app, auth, db;
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            console.log('Firebase 初始化成功');
+        } catch (error) {
+            console.error('Firebase 初始化失敗:', error);
+            alert('系統初始化失敗，請重新整理頁面');
+        }
 
         let currentUser = null;
         let currentUnit = 'mmol/L';
         let selectedTiming = null;
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 監聽認證狀態
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = user;
-                    showMainApp();
-                    initializeApp();
-                } else {
-                    currentUser = null;
-                    showLoginPage();
-                }
-            });
+        // 監聽認證狀態
+        auth.onAuthStateChanged((user) => {
+            console.log('認證狀態變更:', user ? '已登入' : '未登入');
+            if (user) {
+                currentUser = user;
+                showMainApp();
+            } else {
+                currentUser = null;
+                showLoginPage();
+            }
         });
 
         // 顯示登入頁面
@@ -613,6 +608,7 @@
         function showMainApp() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
+            initializeApp();
         }
 
         // 切換登入/註冊標籤
@@ -634,7 +630,7 @@
 
         // 註冊用戶
         async function registerUser() {
-            const email = document.getElementById('registerEmail').value;
+            const email = document.getElementById('registerEmail').value.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerPasswordConfirm').value;
             const errorElement = document.getElementById('registerError');
@@ -673,7 +669,7 @@
 
         // 登入用戶
         async function loginUser() {
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const errorElement = document.getElementById('loginError');
 
@@ -692,6 +688,8 @@
                     errorElement.textContent = '電子郵件或密碼錯誤';
                 } else if (error.code === 'auth/invalid-email') {
                     errorElement.textContent = '電子郵件格式不正確';
+                } else if (error.code === 'auth/invalid-credential') {
+                    errorElement.textContent = '電子郵件或密碼錯誤';
                 } else {
                     errorElement.textContent = '登入失敗：' + error.message;
                 }
@@ -714,35 +712,26 @@
         function initializeApp() {
             // 設定今天日期和當前時間
             const now = new Date();
-            document.getElementById('date').valueAsDate = now;
-            document.getElementById('time').value = now.toTimeString().slice(0, 5);
+            const dateInput = document.getElementById('date');
+            const timeInput = document.getElementById('time');
+            
+            if (dateInput && timeInput) {
+                dateInput.valueAsDate = now;
+                timeInput.value = now.toTimeString().slice(0, 5);
+            }
+
+            // 綁定時間點按鈕事件
+            document.querySelectorAll('.timing-btn').forEach(btn => {
+                btn.onclick = function() {
+                    document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTiming = this.dataset.timing;
+                };
+            });
 
             // 載入記錄
             loadRecords();
             updateStats();
-
-            // 時間點按鈕事件（只綁定一次）
-            const timingBtns = document.querySelectorAll('.timing-btn');
-            if (timingBtns.length > 0 && !timingBtns[0].hasAttribute('data-initialized')) {
-                timingBtns.forEach(btn => {
-                    btn.setAttribute('data-initialized', 'true');
-                    btn.addEventListener('click', function() {
-                        document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
-                        this.classList.add('active');
-                        selectedTiming = this.dataset.timing;
-                    });
-                });
-            }
-
-            // 表單提交事件（只綁定一次）
-            const form = document.getElementById('glucoseForm');
-            if (form && !form.hasAttribute('data-initialized')) {
-                form.setAttribute('data-initialized', 'true');
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    saveRecord();
-                });
-            }
         }
 
         // 切換單位
@@ -753,7 +742,6 @@
                 btn.classList.toggle('active', btn.textContent === unit);
             });
             
-            // 重新載入記錄以顯示新單位
             loadRecords();
             updateStats();
         }
@@ -782,11 +770,17 @@
                 return;
             }
 
+            const valueInput = document.getElementById('value').value;
+            if (!valueInput) {
+                alert('請輸入血糖數值');
+                return;
+            }
+
             const record = {
                 userId: currentUser.uid,
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
-                value: parseFloat(document.getElementById('value').value),
+                value: parseFloat(valueInput),
                 unit: currentUnit,
                 timing: selectedTiming,
                 notes: document.getElementById('notes').value,
@@ -794,10 +788,13 @@
             };
 
             try {
+                console.log('準備儲存記錄:', record);
                 await db.collection('glucoseRecords').add(record);
+                console.log('記錄儲存成功');
 
                 // 重置表單
-                document.getElementById('glucoseForm').reset();
+                document.getElementById('value').value = '';
+                document.getElementById('notes').value = '';
                 document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
                 selectedTiming = null;
                 
@@ -810,7 +807,6 @@
                 loadRecords();
                 updateStats();
 
-                // 顯示成功訊息
                 alert('✅ 記錄已成功儲存！');
             } catch (error) {
                 console.error('儲存失敗:', error);
@@ -820,8 +816,12 @@
 
         // 從 Firebase 載入記錄
         function loadRecords() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.log('未登入，無法載入記錄');
+                return;
+            }
 
+            console.log('開始載入記錄...');
             db.collection('glucoseRecords')
                 .where('userId', '==', currentUser.uid)
                 .orderBy('createdAt', 'desc')
@@ -835,12 +835,14 @@
                             ...doc.data()
                         });
                     });
-
+                    console.log('載入了', records.length, '筆記錄');
                     displayRecords(records);
                 })
                 .catch((error) => {
                     console.error('載入失敗:', error);
-                    alert('載入記錄失敗：' + error.message);
+                    if (error.code === 'failed-precondition') {
+                        alert('需要建立索引。請查看瀏覽器控制台的錯誤訊息，點擊連結建立索引。');
+                    }
                 });
         }
 
@@ -964,7 +966,7 @@
                 });
         }
 
-        // 支援 Enter 鍵登入
+        // Enter 鍵支援
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const loginPage = document.getElementById('loginPage');
