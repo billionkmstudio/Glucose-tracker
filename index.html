@@ -373,9 +373,6 @@
         }
 
         .btn-logout {
-            position: absolute;
-            top: 25px;
-            right: 25px;
             padding: 10px 20px;
             background: #e74c3c;
             color: white;
@@ -389,6 +386,182 @@
 
         .btn-logout:hover {
             background: #c0392b;
+        }
+
+        .header-actions {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-action:hover {
+            background: #5568d3;
+        }
+
+        /* Modal 樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        /* 報表樣式 */
+        .report-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .report-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .report-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .report-stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .report-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .report-stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .status-normal {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-low {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .report-chart {
+            margin-top: 15px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .chart-label {
+            width: 100px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .chart-progress {
+            flex: 1;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chart-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .chart-value {
+            margin-left: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            min-width: 40px;
         }
 
         .footer {
@@ -416,11 +589,21 @@
                 padding: 30px 20px;
             }
 
-            .btn-logout {
-                top: 15px;
-                right: 15px;
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin-top: 15px;
+            }
+
+            .btn-action, .btn-logout {
                 padding: 8px 15px;
                 font-size: 12px;
+            }
+
+            .report-stats {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -477,7 +660,11 @@
     <div id="mainApp" class="container" style="display: none;">
         <div class="header">
             <h1>🩸 血糖追蹤記錄系統</h1>
-            <button class="btn-logout" onclick="logoutUser()">登出</button>
+            <div class="header-actions">
+                <button class="btn-action" onclick="showSettings()">⚙️ 設定</button>
+                <button class="btn-action" onclick="generateReport()">📄 生成報表</button>
+                <button class="btn-logout" onclick="logoutUser()">登出</button>
+            </div>
         </div>
 
         <div class="card">
@@ -559,6 +746,45 @@
         </div>
     </div>
 
+    <!-- 設定 Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 用戶設定</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="userName">姓名</label>
+                <input type="text" id="userName" placeholder="請輸入您的姓名">
+            </div>
+            <div class="form-group">
+                <label for="birthDate">出生日期</label>
+                <input type="date" id="birthDate">
+            </div>
+            <div class="form-group">
+                <label>年齡</label>
+                <input type="text" id="userAge" readonly placeholder="將自動計算">
+            </div>
+            <button class="btn-primary" onclick="saveSettings()">💾 儲存設定</button>
+        </div>
+    </div>
+
+    <!-- 報表 Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📄 血糖追蹤報表</h2>
+                <button class="close-btn" onclick="closeReport()">&times;</button>
+            </div>
+            <div id="reportContent"></div>
+            <button class="btn-primary" onclick="downloadPDF()">📥 下載 PDF</button>
+        </div>
+    </div>
+
+    <!-- jsPDF 庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <script>
         // Firebase 配置
         const firebaseConfig = {
@@ -585,18 +811,329 @@
         let currentUser = null;
         let currentUnit = 'mmol/L';
         let selectedTiming = null;
+        let userProfile = null;
 
         // 監聽認證狀態
         auth.onAuthStateChanged((user) => {
             console.log('認證狀態變更:', user ? '已登入' : '未登入');
             if (user) {
                 currentUser = user;
+                loadUserProfile();
                 showMainApp();
             } else {
                 currentUser = null;
                 showLoginPage();
             }
         });
+
+        // 載入用戶設定
+        async function loadUserProfile() {
+            try {
+                const doc = await db.collection('userProfiles').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    userProfile = doc.data();
+                    console.log('用戶設定已載入:', userProfile);
+                }
+            } catch (error) {
+                console.error('載入用戶設定失敗:', error);
+            }
+        }
+
+        // 顯示設定 Modal
+        function showSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+            if (userProfile) {
+                document.getElementById('userName').value = userProfile.name || '';
+                document.getElementById('birthDate').value = userProfile.birthDate || '';
+                calculateAge();
+            }
+        }
+
+        // 關閉設定 Modal
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // 計算年齡
+        function calculateAge() {
+            const birthDate = document.getElementById('birthDate').value;
+            if (birthDate) {
+                const birth = new Date(birthDate);
+                const today = new Date();
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+                document.getElementById('userAge').value = age + ' 歲';
+            }
+        }
+
+        // 監聽出生日期變化
+        document.addEventListener('DOMContentLoaded', function() {
+            const birthDateInput = document.getElementById('birthDate');
+            if (birthDateInput) {
+                birthDateInput.addEventListener('change', calculateAge);
+            }
+        });
+
+        // 儲存用戶設定
+        async function saveSettings() {
+            const name = document.getElementById('userName').value.trim();
+            const birthDate = document.getElementById('birthDate').value;
+
+            if (!name || !birthDate) {
+                alert('請填寫所有欄位');
+                return;
+            }
+
+            const profile = {
+                name: name,
+                birthDate: birthDate,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection('userProfiles').doc(currentUser.uid).set(profile);
+                userProfile = profile;
+                alert('✅ 設定已儲存！');
+                closeSettings();
+            } catch (error) {
+                console.error('儲存設定失敗:', error);
+                alert('❌ 儲存失敗：' + error.message);
+            }
+        }
+
+        // 生成報表
+        async function generateReport() {
+            if (!userProfile) {
+                alert('請先設定您的個人資料');
+                showSettings();
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection('glucoseRecords')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('createdAt', 'desc')
+                    .get();
+
+                const records = [];
+                snapshot.forEach(doc => {
+                    records.push(doc.data());
+                });
+
+                if (records.length === 0) {
+                    alert('尚無記錄可生成報表');
+                    return;
+                }
+
+                displayReport(records);
+                document.getElementById('reportModal').style.display = 'flex';
+            } catch (error) {
+                console.error('生成報表失敗:', error);
+                alert('生成報表失敗：' + error.message);
+            }
+        }
+
+        // 顯示報表
+        function displayReport(records) {
+            const reportContent = document.getElementById('reportContent');
+            
+            // 計算統計數據
+            const totalRecords = records.length;
+            const values = records.map(r => convertUnit(r.value, r.unit, 'mmol/L'));
+            const avgValue = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+            const maxValue = Math.max(...values).toFixed(1);
+            const minValue = Math.min(...values).toFixed(1);
+
+            // 按時間點分類
+            const fastingRecords = records.filter(r => r.timing === 'fasting');
+            const afterMealRecords = records.filter(r => r.timing === 'after_meal');
+
+            // 計算正常/偏高/偏低比例
+            let normalCount = 0, highCount = 0, lowCount = 0;
+            records.forEach(record => {
+                const mmolValue = convertUnit(record.value, record.unit, 'mmol/L');
+                const status = getGlucoseStatus(mmolValue, 'mmol/L', record.timing);
+                if (status === 'normal') normalCount++;
+                else if (status === 'high') highCount++;
+                else if (status === 'low') lowCount++;
+            });
+
+            const normalPercent = ((normalCount / totalRecords) * 100).toFixed(0);
+            const highPercent = ((highCount / totalRecords) * 100).toFixed(0);
+            const lowPercent = ((lowCount / totalRecords) * 100).toFixed(0);
+
+            // 計算年齡
+            const birth = new Date(userProfile.birthDate);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+
+            // 生成報表 HTML
+            reportContent.innerHTML = `
+                <div class="report-section">
+                    <h3>📋 基本資料</h3>
+                    <p><strong>姓名：</strong>${userProfile.name}</p>
+                    <p><strong>年齡：</strong>${age} 歲</p>
+                    <p><strong>報表日期：</strong>${today.toLocaleDateString('zh-TW')}</p>
+                    <p><strong>記錄期間：</strong>${records[records.length-1].date} 至 ${records[0].date}</p>
+                </div>
+
+                <div class="report-section">
+                    <h3>📊 整體統計</h3>
+                    <div class="report-stats">
+                        <div class="report-stat-item">
+                            <div class="report-stat-value">${totalRecords}</div>
+                            <div class="report-stat-label">總記錄數</div>
+                        </div>
+                        <div class="report-stat-item">
+                            <div class="report-stat-value">${avgValue}</div>
+                            <div class="report-stat-label">平均血糖 (mmol/L)</div>
+                        </div>
+                        <div class="report-stat-item">
+                            <div class="report-stat-value">${maxValue}</div>
+                            <div class="report-stat-label">最高血糖 (mmol/L)</div>
+                        </div>
+                        <div class="report-stat-item">
+                            <div class="report-stat-value">${minValue}</div>
+                            <div class="report-stat-label">最低血糖 (mmol/L)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>🎯 血糖控制狀況</h3>
+                    <p style="margin-bottom: 15px;">
+                        <span class="status-indicator status-normal">正常 ${normalCount} 次 (${normalPercent}%)</span>
+                        <span class="status-indicator status-high">偏高 ${highCount} 次 (${highPercent}%)</span>
+                        <span class="status-indicator status-low">偏低 ${lowCount} 次 (${lowPercent}%)</span>
+                    </p>
+                    <div class="report-chart">
+                        <div class="chart-bar">
+                            <div class="chart-label">正常</div>
+                            <div class="chart-progress">
+                                <div class="chart-fill" style="width: ${normalPercent}%; background: #27ae60;"></div>
+                            </div>
+                            <div class="chart-value">${normalPercent}%</div>
+                        </div>
+                        <div class="chart-bar">
+                            <div class="chart-label">偏高</div>
+                            <div class="chart-progress">
+                                <div class="chart-fill" style="width: ${highPercent}%; background: #e74c3c;"></div>
+                            </div>
+                            <div class="chart-value">${highPercent}%</div>
+                        </div>
+                        <div class="chart-bar">
+                            <div class="chart-label">偏低</div>
+                            <div class="chart-progress">
+                                <div class="chart-fill" style="width: ${lowPercent}%; background: #f39c12;"></div>
+                            </div>
+                            <div class="chart-value">${lowPercent}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>🍽️ 空腹血糖分析</h3>
+                    ${fastingRecords.length > 0 ? `
+                        <p><strong>記錄次數：</strong>${fastingRecords.length} 次</p>
+                        <p><strong>平均值：</strong>${(fastingRecords.map(r => convertUnit(r.value, r.unit, 'mmol/L')).reduce((a,b) => a+b, 0) / fastingRecords.length).toFixed(1)} mmol/L</p>
+                        <p><strong>正常範圍：</strong>4.0 - 6.0 mmol/L</p>
+                    ` : '<p>暫無空腹血糖記錄</p>'}
+                </div>
+
+                <div class="report-section">
+                    <h3>🍴 飯後血糖分析</h3>
+                    ${afterMealRecords.length > 0 ? `
+                        <p><strong>記錄次數：</strong>${afterMealRecords.length} 次</p>
+                        <p><strong>平均值：</strong>${(afterMealRecords.map(r => convertUnit(r.value, r.unit, 'mmol/L')).reduce((a,b) => a+b, 0) / afterMealRecords.length).toFixed(1)} mmol/L</p>
+                        <p><strong>正常範圍：</strong>< 7.8 mmol/L</p>
+                    ` : '<p>暫無飯後血糖記錄</p>'}
+                </div>
+
+                <div class="report-section">
+                    <h3>💡 健康建議</h3>
+                    ${highPercent > 30 ? '<p>⚠️ 偏高比例較高，建議諮詢醫生，調整飲食和運動計劃。</p>' : ''}
+                    ${normalPercent >= 70 ? '<p>✅ 血糖控制良好，請繼續保持健康的生活方式。</p>' : ''}
+                    ${lowPercent > 20 ? '<p>⚠️ 偏低比例較高，注意是否有低血糖症狀，建議諮詢醫生。</p>' : ''}
+                    <p>📌 定期監測血糖，保持健康飲食和適度運動。</p>
+                    <p>📌 如有任何疑問，請諮詢您的醫療保健提供者。</p>
+                </div>
+
+                <div class="report-section">
+                    <h3>📝 最近記錄</h3>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        ${records.slice(0, 10).map(record => {
+                            const mmolValue = convertUnit(record.value, record.unit, 'mmol/L');
+                            const status = getGlucoseStatus(mmolValue, 'mmol/L', record.timing);
+                            const statusClass = status === 'normal' ? 'status-normal' : status === 'high' ? 'status-high' : 'status-low';
+                            const statusText = status === 'normal' ? '正常' : status === 'high' ? '偏高' : '偏低';
+                            return `
+                                <p style="margin-bottom: 8px;">
+                                    <strong>${record.date} ${record.time}</strong> - 
+                                    ${getTimingText(record.timing)}: 
+                                    ${mmolValue.toFixed(1)} mmol/L 
+                                    <span class="status-indicator ${statusClass}">${statusText}</span>
+                                </p>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 關閉報表 Modal
+        function closeReport() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        // 下載 PDF
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const reportContent = document.getElementById('reportContent');
+
+            try {
+                // 使用 html2canvas 將 HTML 轉換為圖片
+                const canvas = await html2canvas(reportContent, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; // A4 寬度
+                const pageHeight = 297; // A4 高度
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // 添加第一頁
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // 如果內容超過一頁，添加更多頁面
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                // 生成文件名
+                const fileName = `血糖追蹤報表_${userProfile.name}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.pdf`;
+                pdf.save(fileName);
+            } catch (error) {
+                console.error('生成 PDF 失敗:', error);
+                alert('生成 PDF 失敗，請稍後再試');
+            }
+        }
 
         // 顯示登入頁面
         function showLoginPage() {
