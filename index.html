@@ -1396,59 +1396,51 @@
 
             console.log('開始載入記錄... 用戶ID:', currentUser.uid);
             
+            // 直接載入所有記錄，不使用 orderBy，避免索引問題
             db.collection('glucoseRecords')
                 .where('userId', '==', currentUser.uid)
-                .orderBy('createdAt', 'desc')
-                .limit(50)
                 .get()
                 .then((querySnapshot) => {
                     const records = [];
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
-                        console.log('記錄數據:', data);
+                        console.log('找到記錄:', data);
                         records.push({
                             id: doc.id,
                             ...data
                         });
                     });
-                    console.log('載入了', records.length, '筆記錄');
+                    
+                    console.log('總共載入了', records.length, '筆記錄');
+                    
+                    // 手動排序：按日期和時間降序
+                    records.sort((a, b) => {
+                        const dateTimeA = new Date(a.date + ' ' + a.time);
+                        const dateTimeB = new Date(b.date + ' ' + b.time);
+                        return dateTimeB - dateTimeA; // 降序：最新的在前
+                    });
+                    
+                    console.log('排序後的記錄:', records);
                     displayRecords(records);
                 })
                 .catch((error) => {
-                    console.error('載入失敗:', error);
+                    console.error('載入記錄失敗:', error);
                     console.error('錯誤代碼:', error.code);
                     console.error('錯誤訊息:', error.message);
                     
-                    if (error.code === 'failed-precondition') {
-                        alert('⚠️ 需要建立資料庫索引\n\n請按以下步驟操作：\n1. 打開瀏覽器的開發者工具 (F12)\n2. 查看 Console 標籤\n3. 點擊錯誤訊息中的連結建立索引\n4. 等待幾分鐘後重新整理頁面');
-                    } else {
-                        // 即使有錯誤，也嘗試用其他方式載入
-                        console.log('嘗試不使用 orderBy 載入記錄...');
-                        db.collection('glucoseRecords')
-                            .where('userId', '==', currentUser.uid)
-                            .get()
-                            .then((querySnapshot) => {
-                                const records = [];
-                                querySnapshot.forEach((doc) => {
-                                    records.push({
-                                        id: doc.id,
-                                        ...doc.data()
-                                    });
-                                });
-                                // 手動排序
-                                records.sort((a, b) => {
-                                    const dateA = new Date(a.date + ' ' + a.time);
-                                    const dateB = new Date(b.date + ' ' + b.time);
-                                    return dateB - dateA;
-                                });
-                                console.log('使用備用方法載入了', records.length, '筆記錄');
-                                displayRecords(records);
-                            })
-                            .catch((err) => {
-                                console.error('備用載入方法也失敗:', err);
-                                alert('載入記錄失敗：' + err.message);
-                            });
-                    }
+                    // 顯示友善的錯誤訊息
+                    const container = document.getElementById('recordsList');
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p style="color: #e74c3c; font-weight: 600;">⚠️ 載入失敗</p>
+                            <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                                錯誤：${error.message}
+                            </p>
+                            <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                                請檢查 Firebase 安全規則設定
+                            </p>
+                        </div>
+                    `;
                 });
         }
 
@@ -1550,6 +1542,8 @@
                     querySnapshot.forEach((doc) => {
                         records.push(doc.data());
                     });
+
+                    console.log('統計數據載入了', records.length, '筆記錄');
 
                     if (records.length === 0) {
                         document.getElementById('avgValue').textContent = '-';
