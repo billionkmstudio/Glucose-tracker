@@ -151,6 +151,23 @@
             transform: translateY(0);
         }
 
+        .btn-secondary {
+            padding: 12px 24px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
         .records-list {
             margin-top: 20px;
         }
@@ -373,6 +390,9 @@
         }
 
         .btn-logout {
+            position: absolute;
+            top: 25px;
+            right: 25px;
             padding: 10px 20px;
             background: #e74c3c;
             color: white;
@@ -388,28 +408,8 @@
             background: #c0392b;
         }
 
-        .header-actions {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-action {
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .btn-action:hover {
-            background: #5568d3;
+        .header {
+            position: relative;
         }
 
         /* Modal 樣式 */
@@ -589,15 +589,9 @@
                 padding: 30px 20px;
             }
 
-            .header-actions {
-                position: static;
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                margin-top: 15px;
-            }
-
-            .btn-action, .btn-logout {
+            .btn-logout {
+                top: 15px;
+                right: 15px;
                 padding: 8px 15px;
                 font-size: 12px;
             }
@@ -660,11 +654,7 @@
     <div id="mainApp" class="container" style="display: none;">
         <div class="header">
             <h1>🩸 血糖追蹤記錄系統</h1>
-            <div class="header-actions">
-                <button class="btn-action" onclick="showSettings()">⚙️ 設定</button>
-                <button class="btn-action" onclick="generateReport()">📄 生成報表</button>
-                <button class="btn-logout" onclick="logoutUser()">登出</button>
-            </div>
+            <button class="btn-logout" onclick="logoutUser()">登出</button>
         </div>
 
         <div class="card">
@@ -741,6 +731,19 @@
             </div>
         </div>
 
+        <div class="card">
+            <h2>👤 人員管理</h2>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn-secondary" onclick="showSettings()">✏️ 管理人員</button>
+                <button class="btn-secondary" onclick="generateReport()">📄 生成報表</button>
+            </div>
+            <div id="userInfoDisplay" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; display: none;">
+                <p style="margin-bottom: 8px;"><strong>👤 姓名：</strong><span id="displayName">-</span></p>
+                <p style="margin-bottom: 8px;"><strong>🎂 出生日期：</strong><span id="displayBirthDate">-</span> (<span id="displayAge">-</span>)</p>
+                <p><strong>⚧ 性別：</strong><span id="displayGender">-</span></p>
+            </div>
+        </div>
+
         <div class="footer">
             <p>&copy; 2026 Billion Studio | 健康管理工具系列</p>
         </div>
@@ -750,12 +753,20 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>⚙️ 用戶設定</h2>
+                <h2>👤 人員管理</h2>
                 <button class="close-btn" onclick="closeSettings()">&times;</button>
             </div>
             <div class="form-group">
                 <label for="userName">姓名</label>
                 <input type="text" id="userName" placeholder="請輸入您的姓名">
+            </div>
+            <div class="form-group">
+                <label for="userGender">性別</label>
+                <select id="userGender">
+                    <option value="">請選擇</option>
+                    <option value="male">男 Male</option>
+                    <option value="female">女 Female</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="birthDate">出生日期</label>
@@ -833,9 +844,29 @@
                 if (doc.exists) {
                     userProfile = doc.data();
                     console.log('用戶設定已載入:', userProfile);
+                    displayUserInfo();
                 }
             } catch (error) {
                 console.error('載入用戶設定失敗:', error);
+            }
+        }
+
+        // 顯示用戶資訊
+        function displayUserInfo() {
+            if (userProfile) {
+                const birth = new Date(userProfile.birthDate);
+                const today = new Date();
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+
+                document.getElementById('displayName').textContent = userProfile.name;
+                document.getElementById('displayBirthDate').textContent = userProfile.birthDate;
+                document.getElementById('displayAge').textContent = age + '歲';
+                document.getElementById('displayGender').textContent = userProfile.gender === 'male' ? '男 Male' : '女 Female';
+                document.getElementById('userInfoDisplay').style.display = 'block';
             }
         }
 
@@ -844,6 +875,7 @@
             document.getElementById('settingsModal').style.display = 'flex';
             if (userProfile) {
                 document.getElementById('userName').value = userProfile.name || '';
+                document.getElementById('userGender').value = userProfile.gender || '';
                 document.getElementById('birthDate').value = userProfile.birthDate || '';
                 calculateAge();
             }
@@ -880,15 +912,17 @@
         // 儲存用戶設定
         async function saveSettings() {
             const name = document.getElementById('userName').value.trim();
+            const gender = document.getElementById('userGender').value;
             const birthDate = document.getElementById('birthDate').value;
 
-            if (!name || !birthDate) {
+            if (!name || !gender || !birthDate) {
                 alert('請填寫所有欄位');
                 return;
             }
 
             const profile = {
                 name: name,
+                gender: gender,
                 birthDate: birthDate,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -896,6 +930,7 @@
             try {
                 await db.collection('userProfiles').doc(currentUser.uid).set(profile);
                 userProfile = profile;
+                displayUserInfo();
                 alert('✅ 設定已儲存！');
                 closeSettings();
             } catch (error) {
@@ -979,6 +1014,7 @@
                 <div class="report-section">
                     <h3>📋 基本資料</h3>
                     <p><strong>姓名：</strong>${userProfile.name}</p>
+                    <p><strong>性別：</strong>${userProfile.gender === 'male' ? '男 Male' : '女 Female'}</p>
                     <p><strong>年齡：</strong>${age} 歲</p>
                     <p><strong>報表日期：</strong>${today.toLocaleDateString('zh-TW')}</p>
                     <p><strong>記錄期間：</strong>${records[records.length-1].date} 至 ${records[0].date}</p>
@@ -1358,7 +1394,8 @@
                 return;
             }
 
-            console.log('開始載入記錄...');
+            console.log('開始載入記錄... 用戶ID:', currentUser.uid);
+            
             db.collection('glucoseRecords')
                 .where('userId', '==', currentUser.uid)
                 .orderBy('createdAt', 'desc')
@@ -1367,9 +1404,11 @@
                 .then((querySnapshot) => {
                     const records = [];
                     querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        console.log('記錄數據:', data);
                         records.push({
                             id: doc.id,
-                            ...doc.data()
+                            ...data
                         });
                     });
                     console.log('載入了', records.length, '筆記錄');
@@ -1377,8 +1416,38 @@
                 })
                 .catch((error) => {
                     console.error('載入失敗:', error);
+                    console.error('錯誤代碼:', error.code);
+                    console.error('錯誤訊息:', error.message);
+                    
                     if (error.code === 'failed-precondition') {
-                        alert('需要建立索引。請查看瀏覽器控制台的錯誤訊息，點擊連結建立索引。');
+                        alert('⚠️ 需要建立資料庫索引\n\n請按以下步驟操作：\n1. 打開瀏覽器的開發者工具 (F12)\n2. 查看 Console 標籤\n3. 點擊錯誤訊息中的連結建立索引\n4. 等待幾分鐘後重新整理頁面');
+                    } else {
+                        // 即使有錯誤，也嘗試用其他方式載入
+                        console.log('嘗試不使用 orderBy 載入記錄...');
+                        db.collection('glucoseRecords')
+                            .where('userId', '==', currentUser.uid)
+                            .get()
+                            .then((querySnapshot) => {
+                                const records = [];
+                                querySnapshot.forEach((doc) => {
+                                    records.push({
+                                        id: doc.id,
+                                        ...doc.data()
+                                    });
+                                });
+                                // 手動排序
+                                records.sort((a, b) => {
+                                    const dateA = new Date(a.date + ' ' + a.time);
+                                    const dateB = new Date(b.date + ' ' + b.time);
+                                    return dateB - dateA;
+                                });
+                                console.log('使用備用方法載入了', records.length, '筆記錄');
+                                displayRecords(records);
+                            })
+                            .catch((err) => {
+                                console.error('備用載入方法也失敗:', err);
+                                alert('載入記錄失敗：' + err.message);
+                            });
                     }
                 });
         }
