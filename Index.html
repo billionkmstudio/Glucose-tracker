@@ -325,12 +325,168 @@
             font-size: 14px;
             opacity: 0.9;
         }
+
+        /* 登入頁面樣式 */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .login-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .auth-form {
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+
+        .header {
+            position: relative;
+        }
+
+        @media (max-width: 600px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .btn-logout {
+                top: 15px;
+                right: 15px;
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- 登入頁面 -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🩸 血糖追蹤記錄系統</h1>
+                <p>請登入以開始使用</p>
+            </div>
+            
+            <div class="login-tabs">
+                <button class="tab-btn active" onclick="showTab('login')">登入</button>
+                <button class="tab-btn" onclick="showTab('register')">註冊</button>
+            </div>
+
+            <!-- 登入表單 -->
+            <div id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="loginEmail">電子郵件</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">密碼</label>
+                    <input type="password" id="loginPassword" placeholder="請輸入密碼" required>
+                </div>
+                <button class="btn-primary" onclick="loginUser()">登入</button>
+                <p class="error-message" id="loginError"></p>
+            </div>
+
+            <!-- 註冊表單 -->
+            <div id="registerForm" class="auth-form" style="display: none;">
+                <div class="form-group">
+                    <label for="registerEmail">電子郵件</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">密碼</label>
+                    <input type="password" id="registerPassword" placeholder="至少6個字元" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPasswordConfirm">確認密碼</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="再次輸入密碼" required>
+                </div>
+                <button class="btn-primary" onclick="registerUser()">註冊</button>
+                <p class="error-message" id="registerError"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主應用 -->
+    <div id="mainApp" class="container" style="display: none;">
         <div class="header">
             <h1>🩸 血糖追蹤記錄系統</h1>
+            <button class="btn-logout" onclick="logoutUser()">登出</button>
         </div>
 
         <div class="card">
@@ -434,44 +590,160 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 監聽認證狀態
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    showMainApp();
+                    initializeApp();
+                } else {
+                    currentUser = null;
+                    showLoginPage();
+                }
+            });
+        });
+
+        // 顯示登入頁面
+        function showLoginPage() {
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+        }
+
+        // 顯示主應用
+        function showMainApp() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+        }
+
+        // 切換登入/註冊標籤
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (tab === 'login') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+            }
+        }
+
+        // 註冊用戶
+        async function registerUser() {
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerPasswordConfirm').value;
+            const errorElement = document.getElementById('registerError');
+
+            errorElement.textContent = '';
+
+            if (!email || !password || !confirmPassword) {
+                errorElement.textContent = '請填寫所有欄位';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorElement.textContent = '密碼至少需要6個字元';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = '密碼不一致';
+                return;
+            }
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                alert('✅ 註冊成功！');
+            } catch (error) {
+                console.error('註冊錯誤:', error);
+                if (error.code === 'auth/email-already-in-use') {
+                    errorElement.textContent = '此電子郵件已被使用';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorElement.textContent = '電子郵件格式不正確';
+                } else {
+                    errorElement.textContent = '註冊失敗：' + error.message;
+                }
+            }
+        }
+
+        // 登入用戶
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('loginError');
+
+            errorElement.textContent = '';
+
+            if (!email || !password) {
+                errorElement.textContent = '請填寫所有欄位';
+                return;
+            }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                console.error('登入錯誤:', error);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorElement.textContent = '電子郵件或密碼錯誤';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorElement.textContent = '電子郵件格式不正確';
+                } else {
+                    errorElement.textContent = '登入失敗：' + error.message;
+                }
+            }
+        }
+
+        // 登出用戶
+        async function logoutUser() {
+            if (confirm('確定要登出嗎？')) {
+                try {
+                    await auth.signOut();
+                } catch (error) {
+                    console.error('登出錯誤:', error);
+                    alert('登出失敗');
+                }
+            }
+        }
+
+        // 初始化主應用
+        function initializeApp() {
             // 設定今天日期和當前時間
             const now = new Date();
             document.getElementById('date').valueAsDate = now;
             document.getElementById('time').value = now.toTimeString().slice(0, 5);
 
-            // 匿名登入
-            auth.signInAnonymously().then(() => {
-                console.log('已匿名登入');
-            }).catch((error) => {
-                console.error('登入失敗:', error);
-            });
+            // 載入記錄
+            loadRecords();
+            updateStats();
 
-            // 監聽認證狀態
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = user;
-                    loadRecords();
-                    updateStats();
-                } else {
-                    currentUser = null;
-                }
-            });
-
-            // 時間點按鈕事件
-            document.querySelectorAll('.timing-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    selectedTiming = this.dataset.timing;
+            // 時間點按鈕事件（只綁定一次）
+            const timingBtns = document.querySelectorAll('.timing-btn');
+            if (timingBtns.length > 0 && !timingBtns[0].hasAttribute('data-initialized')) {
+                timingBtns.forEach(btn => {
+                    btn.setAttribute('data-initialized', 'true');
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        selectedTiming = this.dataset.timing;
+                    });
                 });
-            });
+            }
 
-            // 表單提交
-            document.getElementById('glucoseForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                saveRecord();
-            });
-        });
+            // 表單提交事件（只綁定一次）
+            const form = document.getElementById('glucoseForm');
+            if (form && !form.hasAttribute('data-initialized')) {
+                form.setAttribute('data-initialized', 'true');
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    saveRecord();
+                });
+            }
+        }
 
         // 切換單位
         function switchUnit(unit) {
@@ -506,7 +778,7 @@
             }
 
             if (!currentUser) {
-                alert('請稍候，正在連接...');
+                alert('請先登入');
                 return;
             }
 
@@ -542,7 +814,7 @@
                 alert('✅ 記錄已成功儲存！');
             } catch (error) {
                 console.error('儲存失敗:', error);
-                alert('❌ 儲存失敗，請稍後再試');
+                alert('❌ 儲存失敗：' + error.message);
             }
         }
 
@@ -553,6 +825,7 @@
             db.collection('glucoseRecords')
                 .where('userId', '==', currentUser.uid)
                 .orderBy('createdAt', 'desc')
+                .limit(50)
                 .get()
                 .then((querySnapshot) => {
                     const records = [];
@@ -567,6 +840,7 @@
                 })
                 .catch((error) => {
                     console.error('載入失敗:', error);
+                    alert('載入記錄失敗：' + error.message);
                 });
         }
 
@@ -652,7 +926,7 @@
                 updateStats();
             } catch (error) {
                 console.error('刪除失敗:', error);
-                alert('❌ 刪除失敗，請稍後再試');
+                alert('❌ 刪除失敗：' + error.message);
             }
         }
 
@@ -689,6 +963,23 @@
                     console.error('統計載入失敗:', error);
                 });
         }
+
+        // 支援 Enter 鍵登入
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const loginPage = document.getElementById('loginPage');
+                if (loginPage && loginPage.style.display !== 'none') {
+                    const loginForm = document.getElementById('loginForm');
+                    const registerForm = document.getElementById('registerForm');
+                    
+                    if (loginForm.style.display !== 'none') {
+                        loginUser();
+                    } else if (registerForm.style.display !== 'none') {
+                        registerUser();
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
