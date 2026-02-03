@@ -3,1585 +3,1282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>血糖追蹤記錄系統 | Glucose Tracker</title>
+    <title>血糖趨勢智能管家</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --success-color: #198754;
+            --info-color: #0dcaf0;
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        
+        body { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 20px 0;
         }
-
-        .container {
-            max-width: 800px;
+        
+        .main-container {
+            max-width: 1400px;
             margin: 0 auto;
         }
-
-        .header {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        
+        .card { 
+            border: none; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            text-align: center;
-            position: relative;
+            border-radius: 12px;
         }
-
-        .header h1 {
-            color: #667eea;
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            color: #333;
-            font-size: 20px;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            color: #555;
+        
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
             font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
         }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .timing-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .timing-btn {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .timing-btn:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
-
-        .timing-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .btn-primary {
-            width: 100%;
+        
+        .alert-box {
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            padding: 12px 24px;
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-secondary:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .records-list {
-            margin-top: 20px;
-        }
-
-        .record-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            border-left: 5px solid #667eea;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .record-item.high {
-            border-left-color: #e74c3c;
-            background: #fff5f5;
-        }
-
-        .record-item.low {
-            border-left-color: #f39c12;
-            background: #fffbf0;
-        }
-
-        .record-item.normal {
-            border-left-color: #27ae60;
-            background: #f0fff4;
-        }
-
-        .record-info {
-            flex: 1;
-        }
-
-        .record-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .record-value .unit {
-            font-size: 16px;
-            color: #666;
+            margin-bottom: 15px;
             font-weight: 500;
         }
-
-        .record-details {
-            font-size: 13px;
-            color: #666;
-            line-height: 1.6;
+        
+        .alert-danger-custom {
+            background: #fff5f5;
+            border-left: 4px solid var(--danger-color);
+            color: var(--danger-color);
         }
-
-        .record-timing {
-            display: inline-block;
-            padding: 3px 8px;
-            background: #667eea;
-            color: white;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-right: 5px;
+        
+        .alert-warning-custom {
+            background: #fffbf0;
+            border-left: 4px solid var(--warning-color);
+            color: #856404;
         }
-
-        .record-actions {
-            display: flex;
-            gap: 8px;
+        
+        .alert-success-custom {
+            background: #f0fff4;
+            border-left: 4px solid var(--success-color);
+            color: var(--success-color);
         }
-
-        .btn-delete {
-            padding: 8px 12px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: background 0.3s;
-        }
-
-        .btn-delete:hover {
-            background: #c0392b;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 15px;
-            opacity: 0.3;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
+        
         .stat-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
             text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-
+        
         .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 5px;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
         }
-
+        
         .stat-label {
-            font-size: 12px;
-            color: #666;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
             font-weight: 600;
         }
-
-        .unit-toggle {
+        
+        .badge-high { background: #ffe5e5; color: var(--danger-color); }
+        .badge-normal { background: #e8f5e9; color: var(--success-color); }
+        .badge-low { background: #fff8e1; color: #ff8f00; }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-top: 20px;
+        }
+        
+        .period-selector {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
-
-        .unit-btn {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
+        
+        .period-btn {
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
             background: white;
-            border-radius: 8px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
             transition: all 0.3s;
         }
-
-        .unit-btn.active {
+        
+        .period-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .period-btn.active {
             background: #667eea;
             color: white;
             border-color: #667eea;
         }
-
-        /* 登入頁面樣式 */
-        .login-page {
-            min-height: 100vh;
+        
+        .insight-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .insight-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 450px;
-            width: 100%;
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .login-header h1 {
-            color: #667eea;
-            font-size: 28px;
+            gap: 10px;
             margin-bottom: 10px;
         }
-
-        .login-header p {
-            color: #666;
-            font-size: 14px;
+        
+        /* Auth Styles */
+        .auth-container {
+            max-width: 450px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
-
-        .login-tabs {
+        
+        .auth-tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 30px;
         }
-
-        .tab-btn {
+        
+        .auth-tab {
             flex: 1;
-            padding: 12px;
-            background: none;
+            padding: 10px;
             border: none;
-            border-bottom: 3px solid transparent;
+            background: #f8f9fa;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            color: #666;
-            transition: all 0.3s;
-            margin-bottom: -2px;
-        }
-
-        .tab-btn.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-
-        .auth-form {
-            margin-top: 20px;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 10px;
-            text-align: center;
-            min-height: 20px;
-        }
-
-        .btn-logout {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            padding: 10px 20px;
-            background: #e74c3c;
-            color: white;
-            border: none;
             border-radius: 8px;
-            font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
-
-        .btn-logout:hover {
-            background: #c0392b;
+        
+        .auth-tab.active {
+            background: #667eea;
+            color: white;
         }
-
-        .header {
-            position: relative;
-        }
-
-        /* Modal 樣式 */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
+        
+        .user-info-bar {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-
-        .modal-header h2 {
-            color: #667eea;
-            margin: 0;
+        
+        #app-container {
+            display: none;
         }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: #999;
-            line-height: 1;
+        
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
         }
-
-        .close-btn:hover {
-            color: #333;
-        }
-
-        /* 報表樣式 */
-        .report-section {
-            margin-bottom: 25px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .report-section h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .report-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .report-stat-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .report-stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .report-stat-label {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        .status-normal {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-high {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-low {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .report-chart {
-            margin-top: 15px;
-        }
-
-        .chart-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .chart-label {
-            width: 100px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .chart-progress {
-            flex: 1;
-            height: 25px;
-            background: #e0e0e0;
-            border-radius: 5px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .chart-fill {
-            height: 100%;
-            transition: width 0.3s;
-        }
-
-        .chart-value {
-            margin-left: 10px;
-            font-weight: 600;
-            font-size: 13px;
-            min-width: 40px;
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 30px;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        @media (max-width: 600px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .timing-buttons {
-                grid-template-columns: 1fr;
-            }
-
-            .login-container {
-                padding: 30px 20px;
-            }
-
-            .btn-logout {
-                top: 15px;
-                right: 15px;
-                padding: 8px 15px;
-                font-size: 12px;
-            }
-
-            .report-stats {
-                grid-template-columns: 1fr;
-            }
+        
+        @media (max-width: 768px) {
+            .stat-value { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <!-- 登入頁面 -->
-    <div id="loginPage" class="login-page">
-        <div class="login-container">
-            <div class="login-header">
-                <h1>🩸 血糖追蹤記錄系統</h1>
-                <p>請登入以開始使用</p>
-            </div>
-            
-            <div class="login-tabs">
-                <button class="tab-btn active" onclick="showTab('login')">登入</button>
-                <button class="tab-btn" onclick="showTab('register')">註冊</button>
-            </div>
 
-            <!-- 登入表單 -->
-            <div id="loginForm" class="auth-form">
-                <div class="form-group">
-                    <label for="loginEmail">電子郵件</label>
-                    <input type="email" id="loginEmail" placeholder="your@email.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">密碼</label>
-                    <input type="password" id="loginPassword" placeholder="請輸入密碼" required>
-                </div>
-                <button type="button" class="btn-primary" onclick="loginUser()">登入</button>
-                <p class="error-message" id="loginError"></p>
-            </div>
+<!-- Auth Container -->
+<div id="auth-container" class="auth-container">
+    <h2 class="text-center mb-4">🩸 血糖趨勢智能管家</h2>
+    
+    <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">登入</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">註冊</button>
+    </div>
+    
+    <!-- Login Form -->
+    <form id="loginForm" style="display: block;">
+        <div class="mb-3">
+            <label class="form-label">電子郵件</label>
+            <input type="email" class="form-control" id="loginEmail" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">密碼</label>
+            <input type="password" class="form-control" id="loginPassword" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">登入</button>
+        <div id="loginError" class="alert alert-danger mt-3" style="display: none;"></div>
+    </form>
+    
+    <!-- Register Form -->
+    <form id="registerForm" style="display: none;">
+        <div class="mb-3">
+            <label class="form-label">電子郵件</label>
+            <input type="email" class="form-control" id="registerEmail" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">密碼（至少6個字元）</label>
+            <input type="password" class="form-control" id="registerPassword" required minlength="6">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">用戶名稱</label>
+            <input type="text" class="form-control" id="registerName" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">性別</label>
+            <select class="form-select" id="registerGender" required>
+                <option value="">請選擇</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">出生日期</label>
+            <input type="date" class="form-control" id="registerBirthdate" required>
+        </div>
+        <button type="submit" class="btn btn-success w-100">註冊</button>
+        <div id="registerError" class="alert alert-danger mt-3" style="display: none;"></div>
+    </form>
+</div>
 
-            <!-- 註冊表單 -->
-            <div id="registerForm" class="auth-form" style="display: none;">
-                <div class="form-group">
-                    <label for="registerEmail">電子郵件</label>
-                    <input type="email" id="registerEmail" placeholder="your@email.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerPassword">密碼</label>
-                    <input type="password" id="registerPassword" placeholder="至少6個字元" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerPasswordConfirm">確認密碼</label>
-                    <input type="password" id="registerPasswordConfirm" placeholder="再次輸入密碼" required>
-                </div>
-                <button type="button" class="btn-primary" onclick="registerUser()">註冊</button>
-                <p class="error-message" id="registerError"></p>
+<!-- Main App Container -->
+<div id="app-container" class="container main-container">
+    <!-- User Info Bar -->
+    <div class="user-info-bar no-print">
+        <div>
+            <strong id="userName"></strong> | <span id="userAge"></span>歲 | <span id="userGender"></span>
+        </div>
+        <button class="btn btn-sm btn-outline-danger" onclick="logout()">登出</button>
+    </div>
+
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h1 class="text-white mb-2">🩸 血糖趨勢智能管家</h1>
+        <p class="text-white-50">專注於趨勢分析，掌握血糖變化</p>
+    </div>
+
+    <!-- Trend Alert Section -->
+    <div id="trendAlertSection"></div>
+
+    <!-- Quick Stats - Fixed Size -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-label">當前趨勢</div>
+                <div class="stat-value" id="currentTrend">-</div>
+                <small id="trendChange"></small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-label">7天平均</div>
+                <div class="stat-value text-primary" id="avg7days">-</div>
+                <small id="avg7daysChange"></small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-label">最高記錄</div>
+                <div class="stat-value text-danger" id="maxValue">-</div>
+                <small id="maxDate"></small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-label">總記錄數</div>
+                <div class="stat-value text-info" id="totalRecords">0</div>
+                <small>筆記錄</small>
             </div>
         </div>
     </div>
 
-    <!-- 主應用 -->
-    <div id="mainApp" class="container" style="display: none;">
-        <div class="header">
-            <h1>🩸 血糖追蹤記錄系統</h1>
-            <button class="btn-logout" onclick="logoutUser()">登出</button>
+    <!-- Input Form -->
+    <div class="card no-print">
+        <div class="card-header bg-primary text-white">
+            📝 新增血糖記錄
         </div>
-
-        <div class="card">
-            <h2>📝 記錄血糖數值</h2>
-            
-            <div class="unit-toggle">
-                <button class="unit-btn active" onclick="switchUnit('mmol/L')">mmol/L</button>
-                <button class="unit-btn" onclick="switchUnit('mg/dL')">mg/dL</button>
-            </div>
-
-            <form id="glucoseForm" onsubmit="return false;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="date">日期</label>
-                        <input type="date" id="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="time">時間</label>
-                        <input type="time" id="time" required>
-                    </div>
+        <div class="card-body">
+            <form id="glucoseForm" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-control" id="dateInput" required>
                 </div>
-
-                <div class="form-group">
-                    <label for="value">血糖值 (<span id="currentUnit">mmol/L</span>)</label>
-                    <input type="number" id="value" step="0.1" min="0" placeholder="請輸入血糖數值" required>
+                <div class="col-md-3">
+                    <label class="form-label">時間</label>
+                    <input type="time" class="form-control" id="timeInput" required>
                 </div>
-
-                <div class="form-group">
-                    <label>測量時間點</label>
-                    <div class="timing-buttons">
-                        <button type="button" class="timing-btn" data-timing="fasting">空腹</button>
-                        <button type="button" class="timing-btn" data-timing="before_meal">飯前</button>
-                        <button type="button" class="timing-btn" data-timing="after_meal">飯後2小時</button>
-                        <button type="button" class="timing-btn" data-timing="bedtime">睡前</button>
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label">血糖值 (mg/dL)</label>
+                    <input type="number" class="form-control" id="valueInput" placeholder="110" required min="20" max="600">
                 </div>
-
-                <div class="form-group">
-                    <label for="notes">備註（選填）</label>
-                    <textarea id="notes" placeholder="記錄飲食、運動或其他影響因素..."></textarea>
+                <div class="col-md-2">
+                    <label class="form-label">測量時機</label>
+                    <select class="form-select" id="timingInput">
+                        <option value="空腹">空腹 (晨起)</option>
+                        <option value="餐前">餐前</option>
+                        <option value="餐後1小時">餐後1小時</option>
+                        <option value="餐後2小時">餐後2小時</option>
+                        <option value="睡前">睡前</option>
+                        <option value="其他">其他</option>
+                    </select>
                 </div>
-
-                <button type="button" class="btn-primary" onclick="saveRecord()">💾 儲存記錄</button>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-success w-100">💾 儲存記錄</button>
+                </div>
+                <div class="col-12">
+                    <input type="text" class="form-control" id="noteInput" placeholder="備註（選填）例如：吃了甜點、運動後等">
+                </div>
             </form>
         </div>
+    </div>
 
-        <div class="card">
-            <h2>📊 統計摘要</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="avgValue">-</div>
-                    <div class="stat-label">平均值</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="maxValue">-</div>
-                    <div class="stat-label">最高值</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="minValue">-</div>
-                    <div class="stat-label">最低值</div>
-                </div>
+    <!-- Trend Chart -->
+    <div class="card" id="chartCard">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+            <span>📊 血糖趨勢圖</span>
+            <div class="period-selector">
+                <button class="period-btn" onclick="changePeriod(7)">7天</button>
+                <button class="period-btn active" onclick="changePeriod(14)">14天</button>
+                <button class="period-btn" onclick="changePeriod(30)">30天</button>
+                <button class="period-btn" onclick="changePeriod(90)">90天</button>
             </div>
         </div>
-
-        <div class="card">
-            <h2>📋 記錄列表</h2>
-            <div id="recordsList" class="records-list">
-                <div class="empty-state">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p>尚無記錄，開始記錄您的第一筆血糖數值吧！</p>
-                </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>👤 人員管理</h2>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <button class="btn-secondary" onclick="showSettings()">✏️ 管理人員</button>
-                <button class="btn-secondary" onclick="generateReport()">📄 生成報表</button>
+            
+            <!-- Insights -->
+            <div class="insight-box">
+                <h6 class="mb-3">💡 智能分析</h6>
+                <div id="insightsContainer"></div>
             </div>
-            <div id="userInfoDisplay" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; display: none;">
-                <p style="margin-bottom: 8px;"><strong>👤 姓名：</strong><span id="displayName">-</span></p>
-                <p style="margin-bottom: 8px;"><strong>🎂 出生日期：</strong><span id="displayBirthDate">-</span> (<span id="displayAge">-</span>)</p>
-                <p><strong>⚧ 性別：</strong><span id="displayGender">-</span></p>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>&copy; 2026 Billion Studio | 健康管理工具系列</p>
         </div>
     </div>
 
-    <!-- 設定 Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>👤 人員管理</h2>
-                <button class="close-btn" onclick="closeSettings()">&times;</button>
+    <!-- Pattern Analysis -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    ⏰ 時段分析
+                </div>
+                <div class="card-body">
+                    <canvas id="timingChart" height="200"></canvas>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="userName">姓名</label>
-                <input type="text" id="userName" placeholder="請輸入您的姓名">
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    📈 異常記錄統計
+                </div>
+                <div class="card-body">
+                    <div id="anomalyStats"></div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="userGender">性別</label>
-                <select id="userGender">
-                    <option value="">請選擇</option>
-                    <option value="male">男 Male</option>
-                    <option value="female">女 Female</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="birthDate">出生日期</label>
-                <input type="date" id="birthDate">
-            </div>
-            <div class="form-group">
-                <label>年齡</label>
-                <input type="text" id="userAge" readonly placeholder="將自動計算">
-            </div>
-            <button class="btn-primary" onclick="saveSettings()">💾 儲存設定</button>
         </div>
     </div>
 
-    <!-- 報表 Modal -->
-    <div id="reportModal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h2>📄 血糖追蹤報表</h2>
-                <button class="close-btn" onclick="closeReport()">&times;</button>
+    <!-- Records Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>📋 歷史記錄</span>
+            <div>
+                <button class="btn btn-sm btn-primary me-2 no-print" onclick="generatePDFReport()">📄 生成PDF報表</button>
+                <button class="btn btn-sm btn-outline-danger no-print" onclick="clearAllData()">🗑️ 清除所有資料</button>
             </div>
-            <div id="reportContent"></div>
-            <button class="btn-primary" onclick="downloadPDF()">📥 下載 PDF</button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>時間</th>
+                            <th>時機</th>
+                            <th>血糖值</th>
+                            <th>狀態</th>
+                            <th>趨勢</th>
+                            <th>備註</th>
+                            <th class="no-print">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTable"></tbody>
+                </table>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- jsPDF 庫 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
 
-    <script>
-        // Firebase 配置
-        const firebaseConfig = {
-            apiKey: "AIzaSyA156hYpzmkKOkwfruueSAOwPsBiZdEyFg",
-            authDomain: "glucose-tracker-1ce2d.firebaseapp.com",
-            projectId: "glucose-tracker-1ce2d",
-            storageBucket: "glucose-tracker-1ce2d.firebasestorage.app",
-            messagingSenderId: "156879055080",
-            appId: "1:156879055080:web:23495e17dd2def5765c15d"
-        };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-        // 初始化 Firebase
-        let app, auth, db;
+    let currentUser = null;
+    let userProfile = null;
+    let records = [];
+    let currentPeriod = 14;
+    let trendChart = null;
+    let timingChart = null;
+
+    // Auth State Observer
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            loadUserProfile();
+        } else {
+            showAuthContainer();
+        }
+    });
+
+    // Auth Functions
+    function switchAuthTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (tab === 'login') {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+        } else {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+        }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        
         try {
-            app = firebase.initializeApp(firebaseConfig);
-            auth = firebase.auth();
-            db = firebase.firestore();
-            console.log('Firebase 初始化成功');
+            await auth.signInWithEmailAndPassword(email, password);
         } catch (error) {
-            console.error('Firebase 初始化失敗:', error);
-            alert('系統初始化失敗，請重新整理頁面');
+            showError('loginError', error.message);
         }
+    });
 
-        let currentUser = null;
-        let currentUnit = 'mmol/L';
-        let selectedTiming = null;
-        let userProfile = null;
-
-        // 監聽認證狀態
-        auth.onAuthStateChanged((user) => {
-            console.log('認證狀態變更:', user ? '已登入' : '未登入');
-            if (user) {
-                currentUser = user;
-                loadUserProfile();
-                showMainApp();
-            } else {
-                currentUser = null;
-                showLoginPage();
-            }
-        });
-
-        // 載入用戶設定
-        async function loadUserProfile() {
-            try {
-                const doc = await db.collection('userProfiles').doc(currentUser.uid).get();
-                if (doc.exists) {
-                    userProfile = doc.data();
-                    console.log('用戶設定已載入:', userProfile);
-                    displayUserInfo();
-                }
-            } catch (error) {
-                console.error('載入用戶設定失敗:', error);
-            }
-        }
-
-        // 顯示用戶資訊
-        function displayUserInfo() {
-            if (userProfile) {
-                const birth = new Date(userProfile.birthDate);
-                const today = new Date();
-                let age = today.getFullYear() - birth.getFullYear();
-                const monthDiff = today.getMonth() - birth.getMonth();
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                    age--;
-                }
-
-                document.getElementById('displayName').textContent = userProfile.name;
-                document.getElementById('displayBirthDate').textContent = userProfile.birthDate;
-                document.getElementById('displayAge').textContent = age + '歲';
-                document.getElementById('displayGender').textContent = userProfile.gender === 'male' ? '男 Male' : '女 Female';
-                document.getElementById('userInfoDisplay').style.display = 'block';
-            }
-        }
-
-        // 顯示設定 Modal
-        function showSettings() {
-            document.getElementById('settingsModal').style.display = 'flex';
-            if (userProfile) {
-                document.getElementById('userName').value = userProfile.name || '';
-                document.getElementById('userGender').value = userProfile.gender || '';
-                document.getElementById('birthDate').value = userProfile.birthDate || '';
-                calculateAge();
-            }
-        }
-
-        // 關閉設定 Modal
-        function closeSettings() {
-            document.getElementById('settingsModal').style.display = 'none';
-        }
-
-        // 計算年齡
-        function calculateAge() {
-            const birthDate = document.getElementById('birthDate').value;
-            if (birthDate) {
-                const birth = new Date(birthDate);
-                const today = new Date();
-                let age = today.getFullYear() - birth.getFullYear();
-                const monthDiff = today.getMonth() - birth.getMonth();
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                    age--;
-                }
-                document.getElementById('userAge').value = age + ' 歲';
-            }
-        }
-
-        // 監聽出生日期變化
-        document.addEventListener('DOMContentLoaded', function() {
-            const birthDateInput = document.getElementById('birthDate');
-            if (birthDateInput) {
-                birthDateInput.addEventListener('change', calculateAge);
-            }
-        });
-
-        // 儲存用戶設定
-        async function saveSettings() {
-            const name = document.getElementById('userName').value.trim();
-            const gender = document.getElementById('userGender').value;
-            const birthDate = document.getElementById('birthDate').value;
-
-            if (!name || !gender || !birthDate) {
-                alert('請填寫所有欄位');
-                return;
-            }
-
-            const profile = {
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const name = document.getElementById('registerName').value;
+        const gender = document.getElementById('registerGender').value;
+        const birthdate = document.getElementById('registerBirthdate').value;
+        
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            
+            // Save user profile to Firestore
+            await db.collection('users').doc(userCredential.user.uid).set({
                 name: name,
                 gender: gender,
-                birthDate: birthDate,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            try {
-                await db.collection('userProfiles').doc(currentUser.uid).set(profile);
-                userProfile = profile;
-                displayUserInfo();
-                alert('✅ 設定已儲存！');
-                closeSettings();
-            } catch (error) {
-                console.error('儲存設定失敗:', error);
-                alert('❌ 儲存失敗：' + error.message);
-            }
-        }
-
-        // 生成報表
-        async function generateReport() {
-            if (!userProfile) {
-                alert('請先設定您的個人資料');
-                showSettings();
-                return;
-            }
-
-            try {
-                const snapshot = await db.collection('glucoseRecords')
-                    .where('userId', '==', currentUser.uid)
-                    .orderBy('createdAt', 'desc')
-                    .get();
-
-                const records = [];
-                snapshot.forEach(doc => {
-                    records.push(doc.data());
-                });
-
-                if (records.length === 0) {
-                    alert('尚無記錄可生成報表');
-                    return;
-                }
-
-                displayReport(records);
-                document.getElementById('reportModal').style.display = 'flex';
-            } catch (error) {
-                console.error('生成報表失敗:', error);
-                alert('生成報表失敗：' + error.message);
-            }
-        }
-
-        // 顯示報表
-        function displayReport(records) {
-            const reportContent = document.getElementById('reportContent');
-            
-            // 計算統計數據
-            const totalRecords = records.length;
-            const values = records.map(r => convertUnit(r.value, r.unit, 'mmol/L'));
-            const avgValue = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
-            const maxValue = Math.max(...values).toFixed(1);
-            const minValue = Math.min(...values).toFixed(1);
-
-            // 按時間點分類
-            const fastingRecords = records.filter(r => r.timing === 'fasting');
-            const afterMealRecords = records.filter(r => r.timing === 'after_meal');
-
-            // 計算正常/偏高/偏低比例
-            let normalCount = 0, highCount = 0, lowCount = 0;
-            records.forEach(record => {
-                const mmolValue = convertUnit(record.value, record.unit, 'mmol/L');
-                const status = getGlucoseStatus(mmolValue, 'mmol/L', record.timing);
-                if (status === 'normal') normalCount++;
-                else if (status === 'high') highCount++;
-                else if (status === 'low') lowCount++;
+                birthdate: birthdate,
+                email: email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            
+        } catch (error) {
+            showError('registerError', error.message);
+        }
+    });
 
-            const normalPercent = ((normalCount / totalRecords) * 100).toFixed(0);
-            const highPercent = ((highCount / totalRecords) * 100).toFixed(0);
-            const lowPercent = ((lowCount / totalRecords) * 100).toFixed(0);
+    function showError(elementId, message) {
+        const errorEl = document.getElementById(elementId);
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        setTimeout(() => {
+            errorEl.style.display = 'none';
+        }, 5000);
+    }
 
-            // 計算年齡
-            const birth = new Date(userProfile.birthDate);
-            const today = new Date();
-            let age = today.getFullYear() - birth.getFullYear();
-            const monthDiff = today.getMonth() - birth.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                age--;
+    async function loadUserProfile() {
+        try {
+            const doc = await db.collection('users').doc(currentUser.uid).get();
+            if (doc.exists) {
+                userProfile = doc.data();
+                showAppContainer();
+                loadRecords();
             }
+        } catch (error) {
+            console.error('Error loading profile:', error);
+        }
+    }
 
-            // 生成報表 HTML
-            reportContent.innerHTML = `
-                <div class="report-section">
-                    <h3>📋 基本資料</h3>
-                    <p><strong>姓名：</strong>${userProfile.name}</p>
-                    <p><strong>性別：</strong>${userProfile.gender === 'male' ? '男 Male' : '女 Female'}</p>
-                    <p><strong>年齡：</strong>${age} 歲</p>
-                    <p><strong>報表日期：</strong>${today.toLocaleDateString('zh-TW')}</p>
-                    <p><strong>記錄期間：</strong>${records[records.length-1].date} 至 ${records[0].date}</p>
+    function showAuthContainer() {
+        document.getElementById('auth-container').style.display = 'block';
+        document.getElementById('app-container').style.display = 'none';
+    }
+
+    function showAppContainer() {
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        
+        // Display user info
+        document.getElementById('userName').textContent = userProfile.name;
+        document.getElementById('userGender').textContent = userProfile.gender;
+        
+        const birthDate = new Date(userProfile.birthdate);
+        const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        document.getElementById('userAge').textContent = age;
+        
+        // Initialize form
+        const now = new Date();
+        document.getElementById('dateInput').valueAsDate = now;
+        document.getElementById('timeInput').value = now.toTimeString().substring(0, 5);
+    }
+
+    async function logout() {
+        try {
+            await auth.signOut();
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    }
+
+    // Load records from Firestore
+    async function loadRecords() {
+        try {
+            const snapshot = await db.collection('glucoseRecords')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('timestamp', 'desc')
+                .get();
+            
+            records = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            renderAll();
+        } catch (error) {
+            console.error('Error loading records:', error);
+        }
+    }
+
+    // Form submission
+    document.getElementById('glucoseForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const record = {
+            userId: currentUser.uid,
+            date: document.getElementById('dateInput').value,
+            time: document.getElementById('timeInput').value,
+            value: parseInt(document.getElementById('valueInput').value),
+            timing: document.getElementById('timingInput').value,
+            note: document.getElementById('noteInput').value,
+            timestamp: firebase.firestore.Timestamp.fromDate(new Date(
+                document.getElementById('dateInput').value + ' ' + document.getElementById('timeInput').value
+            ))
+        };
+
+        try {
+            await db.collection('glucoseRecords').add(record);
+            await loadRecords();
+            
+            document.getElementById('glucoseForm').reset();
+            const current = new Date();
+            document.getElementById('dateInput').valueAsDate = current;
+            document.getElementById('timeInput').value = current.toTimeString().substring(0, 5);
+        } catch (error) {
+            console.error('Error adding record:', error);
+            alert('儲存失敗，請稍後再試');
+        }
+    });
+
+    async function deleteRecord(id) {
+        if (confirm('確定要刪除這筆記錄嗎？')) {
+            try {
+                await db.collection('glucoseRecords').doc(id).delete();
+                await loadRecords();
+            } catch (error) {
+                console.error('Error deleting record:', error);
+            }
+        }
+    }
+
+    async function clearAllData() {
+        if (confirm('警告：這將刪除所有資料且無法復原！確定嗎？')) {
+            if (confirm('請再次確認：真的要清除所有血糖記錄嗎？')) {
+                try {
+                    const batch = db.batch();
+                    const snapshot = await db.collection('glucoseRecords')
+                        .where('userId', '==', currentUser.uid)
+                        .get();
+                    
+                    snapshot.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    
+                    await batch.commit();
+                    await loadRecords();
+                    alert('已清除所有資料');
+                } catch (error) {
+                    console.error('Error clearing data:', error);
+                }
+            }
+        }
+    }
+
+    function renderAll() {
+        renderTrendAlert();
+        renderQuickStats();
+        renderTrendChart();
+        renderTimingChart();
+        renderAnomalyStats();
+        renderRecordsTable();
+        renderInsights();
+    }
+
+    function renderTrendAlert() {
+        if (records.length < 3) {
+            document.getElementById('trendAlertSection').innerHTML = '';
+            return;
+        }
+
+        const recent = records.slice(0, 5);
+        const trend = calculateTrend(recent);
+        
+        let alertHtml = '';
+        
+        if (trend.direction === 'rising' && trend.avgChange > 10) {
+            alertHtml = `
+                <div class="alert-box alert-danger-custom">
+                    <strong>⚠️ 注意：血糖上升趨勢</strong><br>
+                    過去${recent.length}次測量平均上升 ${trend.avgChange.toFixed(1)} mg/dL，建議留意飲食和運動
                 </div>
-
-                <div class="report-section">
-                    <h3>📊 整體統計</h3>
-                    <div class="report-stats">
-                        <div class="report-stat-item">
-                            <div class="report-stat-value">${totalRecords}</div>
-                            <div class="report-stat-label">總記錄數</div>
-                        </div>
-                        <div class="report-stat-item">
-                            <div class="report-stat-value">${avgValue}</div>
-                            <div class="report-stat-label">平均血糖 (mmol/L)</div>
-                        </div>
-                        <div class="report-stat-item">
-                            <div class="report-stat-value">${maxValue}</div>
-                            <div class="report-stat-label">最高血糖 (mmol/L)</div>
-                        </div>
-                        <div class="report-stat-item">
-                            <div class="report-stat-value">${minValue}</div>
-                            <div class="report-stat-label">最低血糖 (mmol/L)</div>
-                        </div>
-                    </div>
+            `;
+        } else if (trend.direction === 'falling' && Math.abs(trend.avgChange) > 10) {
+            alertHtml = `
+                <div class="alert-box alert-warning-custom">
+                    <strong>📉 血糖下降趨勢</strong><br>
+                    過去${recent.length}次測量平均下降 ${Math.abs(trend.avgChange).toFixed(1)} mg/dL
                 </div>
-
-                <div class="report-section">
-                    <h3>🎯 血糖控制狀況</h3>
-                    <p style="margin-bottom: 15px;">
-                        <span class="status-indicator status-normal">正常 ${normalCount} 次 (${normalPercent}%)</span>
-                        <span class="status-indicator status-high">偏高 ${highCount} 次 (${highPercent}%)</span>
-                        <span class="status-indicator status-low">偏低 ${lowCount} 次 (${lowPercent}%)</span>
-                    </p>
-                    <div class="report-chart">
-                        <div class="chart-bar">
-                            <div class="chart-label">正常</div>
-                            <div class="chart-progress">
-                                <div class="chart-fill" style="width: ${normalPercent}%; background: #27ae60;"></div>
-                            </div>
-                            <div class="chart-value">${normalPercent}%</div>
-                        </div>
-                        <div class="chart-bar">
-                            <div class="chart-label">偏高</div>
-                            <div class="chart-progress">
-                                <div class="chart-fill" style="width: ${highPercent}%; background: #e74c3c;"></div>
-                            </div>
-                            <div class="chart-value">${highPercent}%</div>
-                        </div>
-                        <div class="chart-bar">
-                            <div class="chart-label">偏低</div>
-                            <div class="chart-progress">
-                                <div class="chart-fill" style="width: ${lowPercent}%; background: #f39c12;"></div>
-                            </div>
-                            <div class="chart-value">${lowPercent}%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="report-section">
-                    <h3>🍽️ 空腹血糖分析</h3>
-                    ${fastingRecords.length > 0 ? `
-                        <p><strong>記錄次數：</strong>${fastingRecords.length} 次</p>
-                        <p><strong>平均值：</strong>${(fastingRecords.map(r => convertUnit(r.value, r.unit, 'mmol/L')).reduce((a,b) => a+b, 0) / fastingRecords.length).toFixed(1)} mmol/L</p>
-                        <p><strong>正常範圍：</strong>4.0 - 6.0 mmol/L</p>
-                    ` : '<p>暫無空腹血糖記錄</p>'}
-                </div>
-
-                <div class="report-section">
-                    <h3>🍴 飯後血糖分析</h3>
-                    ${afterMealRecords.length > 0 ? `
-                        <p><strong>記錄次數：</strong>${afterMealRecords.length} 次</p>
-                        <p><strong>平均值：</strong>${(afterMealRecords.map(r => convertUnit(r.value, r.unit, 'mmol/L')).reduce((a,b) => a+b, 0) / afterMealRecords.length).toFixed(1)} mmol/L</p>
-                        <p><strong>正常範圍：</strong>< 7.8 mmol/L</p>
-                    ` : '<p>暫無飯後血糖記錄</p>'}
-                </div>
-
-                <div class="report-section">
-                    <h3>💡 健康建議</h3>
-                    ${highPercent > 30 ? '<p>⚠️ 偏高比例較高，建議諮詢醫生，調整飲食和運動計劃。</p>' : ''}
-                    ${normalPercent >= 70 ? '<p>✅ 血糖控制良好，請繼續保持健康的生活方式。</p>' : ''}
-                    ${lowPercent > 20 ? '<p>⚠️ 偏低比例較高，注意是否有低血糖症狀，建議諮詢醫生。</p>' : ''}
-                    <p>📌 定期監測血糖，保持健康飲食和適度運動。</p>
-                    <p>📌 如有任何疑問，請諮詢您的醫療保健提供者。</p>
-                </div>
-
-                <div class="report-section">
-                    <h3>📝 最近記錄</h3>
-                    <div style="max-height: 300px; overflow-y: auto;">
-                        ${records.slice(0, 10).map(record => {
-                            const mmolValue = convertUnit(record.value, record.unit, 'mmol/L');
-                            const status = getGlucoseStatus(mmolValue, 'mmol/L', record.timing);
-                            const statusClass = status === 'normal' ? 'status-normal' : status === 'high' ? 'status-high' : 'status-low';
-                            const statusText = status === 'normal' ? '正常' : status === 'high' ? '偏高' : '偏低';
-                            return `
-                                <p style="margin-bottom: 8px;">
-                                    <strong>${record.date} ${record.time}</strong> - 
-                                    ${getTimingText(record.timing)}: 
-                                    ${mmolValue.toFixed(1)} mmol/L 
-                                    <span class="status-indicator ${statusClass}">${statusText}</span>
-                                </p>
-                            `;
-                        }).join('')}
-                    </div>
+            `;
+        } else if (trend.direction === 'stable') {
+            alertHtml = `
+                <div class="alert-box alert-success-custom">
+                    <strong>✅ 血糖穩定</strong><br>
+                    過去${recent.length}次測量波動在正常範圍內
                 </div>
             `;
         }
 
-        // 關閉報表 Modal
-        function closeReport() {
-            document.getElementById('reportModal').style.display = 'none';
+        const consecutiveHighs = recent.filter(r => r.value > 140).length;
+        if (consecutiveHighs >= 3) {
+            alertHtml += `
+                <div class="alert-box alert-danger-custom">
+                    <strong>🔴 持續偏高警告</strong><br>
+                    最近${consecutiveHighs}次測量都超過140 mg/dL，建議諮詢醫師
+                </div>
+            `;
         }
 
-        // 下載 PDF
-        async function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const reportContent = document.getElementById('reportContent');
+        document.getElementById('trendAlertSection').innerHTML = alertHtml;
+    }
 
-            try {
-                // 使用 html2canvas 將 HTML 轉換為圖片
-                const canvas = await html2canvas(reportContent, {
-                    scale: 2,
-                    logging: false,
-                    useCORS: true
-                });
-
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                const imgWidth = 210; // A4 寬度
-                const pageHeight = 297; // A4 高度
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
-
-                // 添加第一頁
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-
-                // 如果內容超過一頁，添加更多頁面
-                while (heightLeft > 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                // 生成文件名
-                const fileName = `血糖追蹤報表_${userProfile.name}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.pdf`;
-                pdf.save(fileName);
-            } catch (error) {
-                console.error('生成 PDF 失敗:', error);
-                alert('生成 PDF 失敗，請稍後再試');
-            }
+    function renderQuickStats() {
+        if (records.length === 0) {
+            document.getElementById('currentTrend').textContent = '-';
+            document.getElementById('avg7days').textContent = '-';
+            document.getElementById('maxValue').textContent = '-';
+            document.getElementById('totalRecords').textContent = '0';
+            return;
         }
 
-        // 顯示登入頁面
-        function showLoginPage() {
-            document.getElementById('loginPage').style.display = 'flex';
-            document.getElementById('mainApp').style.display = 'none';
+        const recent5 = records.slice(0, 5);
+        const trend = calculateTrend(recent5);
+        
+        let trendIcon = '';
+        let trendClass = '';
+        if (trend.direction === 'rising') {
+            trendIcon = '📈';
+            trendClass = 'text-danger';
+        } else if (trend.direction === 'falling') {
+            trendIcon = '📉';
+            trendClass = 'text-success';
+        } else {
+            trendIcon = '➡️';
+            trendClass = 'text-info';
         }
+        
+        document.getElementById('currentTrend').innerHTML = `<span class="${trendClass}">${trendIcon}</span>`;
+        document.getElementById('trendChange').innerHTML = `<span class="${trendClass}">${trend.description}</span>`;
 
-        // 顯示主應用
-        function showMainApp() {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            initializeApp();
-        }
-
-        // 切換登入/註冊標籤
-        function showTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const last7days = records.filter(r => r.timestamp.toDate() >= sevenDaysAgo);
+        
+        if (last7days.length > 0) {
+            const avg7 = last7days.reduce((sum, r) => sum + r.value, 0) / last7days.length;
+            document.getElementById('avg7days').textContent = avg7.toFixed(0);
+            
+            const fourteenDaysAgo = new Date();
+            fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+            const prev7days = records.filter(r => {
+                const date = r.timestamp.toDate();
+                return date >= fourteenDaysAgo && date < sevenDaysAgo;
             });
             
-            if (tab === 'login') {
-                document.querySelector('.tab-btn:first-child').classList.add('active');
-                document.getElementById('loginForm').style.display = 'block';
-                document.getElementById('registerForm').style.display = 'none';
-            } else {
-                document.querySelector('.tab-btn:last-child').classList.add('active');
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('registerForm').style.display = 'block';
+            if (prev7days.length > 0) {
+                const prevAvg = prev7days.reduce((sum, r) => sum + r.value, 0) / prev7days.length;
+                const change = avg7 - prevAvg;
+                const changeIcon = change > 0 ? '↑' : '↓';
+                const changeClass = change > 0 ? 'text-danger' : 'text-success';
+                document.getElementById('avg7daysChange').innerHTML = 
+                    `<span class="${changeClass}">${changeIcon} ${Math.abs(change).toFixed(1)}</span> vs 上週`;
             }
+        } else {
+            document.getElementById('avg7days').textContent = '-';
         }
 
-        // 註冊用戶
-        async function registerUser() {
-            const email = document.getElementById('registerEmail').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('registerPasswordConfirm').value;
-            const errorElement = document.getElementById('registerError');
+        const maxRecord = records.reduce((max, r) => r.value > max.value ? r : max, records[0]);
+        document.getElementById('maxValue').textContent = maxRecord.value;
+        document.getElementById('maxDate').textContent = maxRecord.date;
 
-            errorElement.textContent = '';
+        document.getElementById('totalRecords').textContent = records.length;
+    }
 
-            if (!email || !password || !confirmPassword) {
-                errorElement.textContent = '請填寫所有欄位';
-                return;
-            }
-
-            if (password.length < 6) {
-                errorElement.textContent = '密碼至少需要6個字元';
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                errorElement.textContent = '密碼不一致';
-                return;
-            }
-
-            try {
-                await auth.createUserWithEmailAndPassword(email, password);
-                alert('✅ 註冊成功！');
-            } catch (error) {
-                console.error('註冊錯誤:', error);
-                if (error.code === 'auth/email-already-in-use') {
-                    errorElement.textContent = '此電子郵件已被使用';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorElement.textContent = '電子郵件格式不正確';
-                } else {
-                    errorElement.textContent = '註冊失敗：' + error.message;
-                }
-            }
+    function calculateTrend(data) {
+        if (data.length < 2) return { direction: 'stable', avgChange: 0, description: '資料不足' };
+        
+        let totalChange = 0;
+        for (let i = 0; i < data.length - 1; i++) {
+            totalChange += data[i].value - data[i + 1].value;
         }
-
-        // 登入用戶
-        async function loginUser() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const errorElement = document.getElementById('loginError');
-
-            errorElement.textContent = '';
-
-            if (!email || !password) {
-                errorElement.textContent = '請填寫所有欄位';
-                return;
-            }
-
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (error) {
-                console.error('登入錯誤:', error);
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    errorElement.textContent = '電子郵件或密碼錯誤';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorElement.textContent = '電子郵件格式不正確';
-                } else if (error.code === 'auth/invalid-credential') {
-                    errorElement.textContent = '電子郵件或密碼錯誤';
-                } else {
-                    errorElement.textContent = '登入失敗：' + error.message;
-                }
-            }
+        
+        const avgChange = totalChange / (data.length - 1);
+        
+        let direction, description;
+        if (avgChange > 5) {
+            direction = 'rising';
+            description = `平均上升 ${avgChange.toFixed(1)} mg/dL`;
+        } else if (avgChange < -5) {
+            direction = 'falling';
+            description = `平均下降 ${Math.abs(avgChange).toFixed(1)} mg/dL`;
+        } else {
+            direction = 'stable';
+            description = '穩定';
         }
+        
+        return { direction, avgChange, description };
+    }
 
-        // 登出用戶
-        async function logoutUser() {
-            if (confirm('確定要登出嗎？')) {
-                try {
-                    await auth.signOut();
-                } catch (error) {
-                    console.error('登出錯誤:', error);
-                    alert('登出失敗');
-                }
-            }
-        }
+    function changePeriod(days) {
+        currentPeriod = days;
+        document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        renderTrendChart();
+        renderInsights();
+    }
 
-        // 初始化主應用
-        function initializeApp() {
-            // 設定今天日期和當前時間
-            const now = new Date();
-            const dateInput = document.getElementById('date');
-            const timeInput = document.getElementById('time');
-            
-            if (dateInput && timeInput) {
-                dateInput.valueAsDate = now;
-                timeInput.value = now.toTimeString().slice(0, 5);
-            }
+    function renderTrendChart() {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - currentPeriod);
+        
+        const periodData = records
+            .filter(r => r.timestamp.toDate() >= cutoffDate)
+            .sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
 
-            // 綁定時間點按鈕事件
-            document.querySelectorAll('.timing-btn').forEach(btn => {
-                btn.onclick = function() {
-                    document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    selectedTiming = this.dataset.timing;
-                };
-            });
+        const labels = periodData.map(r => `${r.date.slice(5)} ${r.time.slice(0, 5)}`);
+        const values = periodData.map(r => r.value);
+        const colors = periodData.map(r => {
+            if (r.value > 180) return 'rgba(220, 53, 69, 0.8)';
+            if (r.value < 70) return 'rgba(255, 193, 7, 0.8)';
+            return 'rgba(25, 135, 84, 0.8)';
+        });
 
-            // 載入記錄
-            loadRecords();
-            updateStats();
-        }
-
-        // 切換單位
-        function switchUnit(unit) {
-            currentUnit = unit;
-            document.getElementById('currentUnit').textContent = unit;
-            document.querySelectorAll('.unit-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.textContent === unit);
-            });
-            
-            loadRecords();
-            updateStats();
-        }
-
-        // 單位轉換
-        function convertUnit(value, fromUnit, toUnit) {
-            if (fromUnit === toUnit) return value;
-            if (fromUnit === 'mmol/L' && toUnit === 'mg/dL') {
-                return value * 18;
-            }
-            if (fromUnit === 'mg/dL' && toUnit === 'mmol/L') {
-                return value / 18;
-            }
-            return value;
-        }
-
-        // 儲存記錄到 Firebase
-        async function saveRecord() {
-            if (!selectedTiming) {
-                alert('請選擇測量時間點');
-                return;
-            }
-
-            if (!currentUser) {
-                alert('請先登入');
-                return;
-            }
-
-            const valueInput = document.getElementById('value').value;
-            if (!valueInput) {
-                alert('請輸入血糖數值');
-                return;
-            }
-
-            const record = {
-                userId: currentUser.uid,
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                value: parseFloat(valueInput),
-                unit: currentUnit,
-                timing: selectedTiming,
-                notes: document.getElementById('notes').value,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            try {
-                console.log('準備儲存記錄:', record);
-                await db.collection('glucoseRecords').add(record);
-                console.log('記錄儲存成功');
-
-                // 重置表單
-                document.getElementById('value').value = '';
-                document.getElementById('notes').value = '';
-                document.querySelectorAll('.timing-btn').forEach(b => b.classList.remove('active'));
-                selectedTiming = null;
-                
-                // 重新設定日期時間
-                const now = new Date();
-                document.getElementById('date').valueAsDate = now;
-                document.getElementById('time').value = now.toTimeString().slice(0, 5);
-
-                // 重新載入列表
-                loadRecords();
-                updateStats();
-
-                alert('✅ 記錄已成功儲存！');
-            } catch (error) {
-                console.error('儲存失敗:', error);
-                alert('❌ 儲存失敗：' + error.message);
-            }
-        }
-
-        // 從 Firebase 載入記錄
-        function loadRecords() {
-            if (!currentUser) {
-                console.log('未登入，無法載入記錄');
-                return;
-            }
-
-            console.log('開始載入記錄... 用戶ID:', currentUser.uid);
-            
-            // 直接載入所有記錄，不使用 orderBy，避免索引問題
-            db.collection('glucoseRecords')
-                .where('userId', '==', currentUser.uid)
-                .get()
-                .then((querySnapshot) => {
-                    const records = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        console.log('找到記錄:', data);
-                        records.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    });
-                    
-                    console.log('總共載入了', records.length, '筆記錄');
-                    
-                    // 手動排序：按日期和時間降序
-                    records.sort((a, b) => {
-                        const dateTimeA = new Date(a.date + ' ' + a.time);
-                        const dateTimeB = new Date(b.date + ' ' + b.time);
-                        return dateTimeB - dateTimeA; // 降序：最新的在前
-                    });
-                    
-                    console.log('排序後的記錄:', records);
-                    displayRecords(records);
-                })
-                .catch((error) => {
-                    console.error('載入記錄失敗:', error);
-                    console.error('錯誤代碼:', error.code);
-                    console.error('錯誤訊息:', error.message);
-                    
-                    // 顯示友善的錯誤訊息
-                    const container = document.getElementById('recordsList');
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <p style="color: #e74c3c; font-weight: 600;">⚠️ 載入失敗</p>
-                            <p style="color: #666; font-size: 14px; margin-top: 10px;">
-                                錯誤：${error.message}
-                            </p>
-                            <p style="color: #666; font-size: 14px; margin-top: 10px;">
-                                請檢查 Firebase 安全規則設定
-                            </p>
-                        </div>
-                    `;
-                });
-        }
-
-        // 顯示記錄
-        function displayRecords(records) {
-            const container = document.getElementById('recordsList');
-
-            if (records.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p>尚無記錄，開始記錄您的第一筆血糖數值吧！</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = records.map(record => {
-                const displayValue = convertUnit(record.value, record.unit, currentUnit);
-                const status = getGlucoseStatus(displayValue, currentUnit, record.timing);
-                const timingText = getTimingText(record.timing);
-
-                return `
-                    <div class="record-item ${status}">
-                        <div class="record-info">
-                            <div class="record-value">
-                                ${displayValue.toFixed(1)} 
-                                <span class="unit">${currentUnit}</span>
-                            </div>
-                            <div class="record-details">
-                                <span class="record-timing">${timingText}</span>
-                                📅 ${record.date} ${record.time}
-                                ${record.notes ? `<br>📝 ${record.notes}` : ''}
-                            </div>
-                        </div>
-                        <div class="record-actions">
-                            <button class="btn-delete" onclick="deleteRecord('${record.id}')">刪除</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 判斷血糖狀態
-        function getGlucoseStatus(value, unit, timing) {
-            let mmolValue = unit === 'mmol/L' ? value : value / 18;
-
-            if (timing === 'fasting') {
-                if (mmolValue < 4.0) return 'low';
-                if (mmolValue >= 4.0 && mmolValue <= 6.0) return 'normal';
-                return 'high';
-            } else if (timing === 'after_meal') {
-                if (mmolValue < 4.0) return 'low';
-                if (mmolValue <= 7.8) return 'normal';
-                return 'high';
-            } else {
-                if (mmolValue < 4.0) return 'low';
-                if (mmolValue <= 7.0) return 'normal';
-                return 'high';
-            }
-        }
-
-        // 取得時間點文字
-        function getTimingText(timing) {
-            const texts = {
-                'fasting': '空腹',
-                'before_meal': '飯前',
-                'after_meal': '飯後2小時',
-                'bedtime': '睡前'
-            };
-            return texts[timing] || timing;
-        }
-
-        // 刪除記錄
-        async function deleteRecord(id) {
-            if (!confirm('確定要刪除這筆記錄嗎？')) return;
-
-            try {
-                await db.collection('glucoseRecords').doc(id).delete();
-                loadRecords();
-                updateStats();
-            } catch (error) {
-                console.error('刪除失敗:', error);
-                alert('❌ 刪除失敗：' + error.message);
-            }
-        }
-
-        // 更新統計
-        function updateStats() {
-            if (!currentUser) return;
-
-            db.collection('glucoseRecords')
-                .where('userId', '==', currentUser.uid)
-                .get()
-                .then((querySnapshot) => {
-                    const records = [];
-                    querySnapshot.forEach((doc) => {
-                        records.push(doc.data());
-                    });
-
-                    console.log('統計數據載入了', records.length, '筆記錄');
-
-                    if (records.length === 0) {
-                        document.getElementById('avgValue').textContent = '-';
-                        document.getElementById('maxValue').textContent = '-';
-                        document.getElementById('minValue').textContent = '-';
-                        return;
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        
+        if (trendChart) trendChart.destroy();
+        
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '血糖值 (mg/dL)',
+                    data: values,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    pointBackgroundColor: colors,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: '正常上限 (140)',
+                    data: Array(labels.length).fill(140),
+                    borderColor: 'rgba(220, 53, 69, 0.5)',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: '正常下限 (70)',
+                    data: Array(labels.length).fill(70),
+                    borderColor: 'rgba(255, 193, 7, 0.5)',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const record = periodData[context.dataIndex];
+                                return `時機: ${record.timing}${record.note ? '\n備註: ' + record.note : ''}`;
+                            }
+                        }
                     }
-
-                    const values = records.map(r => convertUnit(r.value, r.unit, currentUnit));
-                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-                    const max = Math.max(...values);
-                    const min = Math.min(...values);
-
-                    document.getElementById('avgValue').textContent = avg.toFixed(1);
-                    document.getElementById('maxValue').textContent = max.toFixed(1);
-                    document.getElementById('minValue').textContent = min.toFixed(1);
-                })
-                .catch((error) => {
-                    console.error('統計載入失敗:', error);
-                });
-        }
-
-        // Enter 鍵支援
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const loginPage = document.getElementById('loginPage');
-                if (loginPage && loginPage.style.display !== 'none') {
-                    const loginForm = document.getElementById('loginForm');
-                    const registerForm = document.getElementById('registerForm');
-                    
-                    if (loginForm.style.display !== 'none') {
-                        loginUser();
-                    } else if (registerForm.style.display !== 'none') {
-                        registerUser();
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 50,
+                        suggestedMax: 200,
+                        title: {
+                            display: true,
+                            text: 'mg/dL'
+                        }
                     }
                 }
             }
         });
-    </script>
+    }
+
+    function renderTimingChart() {
+        const timingGroups = {};
+        records.forEach(r => {
+            if (!timingGroups[r.timing]) timingGroups[r.timing] = [];
+            timingGroups[r.timing].push(r.value);
+        });
+
+        const labels = Object.keys(timingGroups);
+        const averages = labels.map(timing => {
+            const values = timingGroups[timing];
+            return (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+        });
+
+        const ctx = document.getElementById('timingChart').getContext('2d');
+        
+        if (timingChart) timingChart.destroy();
+        
+        timingChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '平均血糖值',
+                    data: averages,
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.7)',
+                        'rgba(118, 75, 162, 0.7)',
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(25, 135, 84, 0.7)',
+                        'rgba(13, 202, 240, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 50,
+                        title: { display: true, text: 'mg/dL' }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderAnomalyStats() {
+        const highCount = records.filter(r => r.value > 180).length;
+        const lowCount = records.filter(r => r.value < 70).length;
+        const normalCount = records.filter(r => r.value >= 70 && r.value <= 180).length;
+        
+        const total = records.length || 1;
+        
+        document.getElementById('anomalyStats').innerHTML = `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>🔴 偏高 (>180)</span>
+                    <strong class="text-danger">${highCount} 次 (${(highCount/total*100).toFixed(1)}%)</strong>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-danger" style="width: ${highCount/total*100}%"></div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>🟢 正常 (70-180)</span>
+                    <strong class="text-success">${normalCount} 次 (${(normalCount/total*100).toFixed(1)}%)</strong>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-success" style="width: ${normalCount/total*100}%"></div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>🟡 偏低 (<70)</span>
+                    <strong class="text-warning">${lowCount} 次 (${(lowCount/total*100).toFixed(1)}%)</strong>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-warning" style="width: ${lowCount/total*100}%"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderInsights() {
+        if (records.length < 5) {
+            document.getElementById('insightsContainer').innerHTML = 
+                '<p class="text-muted">記錄不足，需要至少5筆記錄才能進行分析</p>';
+            return;
+        }
+
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - currentPeriod);
+        const periodData = records.filter(r => r.timestamp.toDate() >= cutoffDate);
+
+        const insights = [];
+        
+        const trend = calculateTrend(periodData.slice(0, Math.min(10, periodData.length)));
+        if (trend.direction === 'rising' && trend.avgChange > 10) {
+            insights.push({
+                icon: '📈',
+                text: `血糖呈現上升趨勢，${trend.description}`,
+                type: 'warning'
+            });
+        } else if (trend.direction === 'stable') {
+            insights.push({
+                icon: '✅',
+                text: '血糖控制穩定，請繼續保持',
+                type: 'success'
+            });
+        }
+
+        const morningRecords = periodData.filter(r => r.timing === '空腹');
+        if (morningRecords.length >= 3) {
+            const morningAvg = morningRecords.reduce((s, r) => s + r.value, 0) / morningRecords.length;
+            if (morningAvg > 130) {
+                insights.push({
+                    icon: '🌅',
+                    text: `空腹血糖平均 ${morningAvg.toFixed(0)} mg/dL，建議注意晚餐攝取`,
+                    type: 'info'
+                });
+            }
+        }
+
+        const values = periodData.map(r => r.value);
+        const max = Math.max(...values);
+        const min = Math.min(...values);
+        const range = max - min;
+        
+        if (range > 100) {
+            insights.push({
+                icon: '⚡',
+                text: `血糖波動較大（${min}-${max}），建議規律飲食`,
+                type: 'warning'
+            });
+        }
+
+        const recent3 = periodData.slice(0, 3);
+        const recentHighs = recent3.filter(r => r.value > 180).length;
+        if (recentHighs >= 2) {
+            insights.push({
+                icon: '⚠️',
+                text: '近期多次偏高，建議諮詢醫師調整用藥',
+                type: 'danger'
+            });
+        }
+
+        let html = '';
+        insights.forEach(insight => {
+            const colorClass = insight.type === 'success' ? 'text-success' : 
+                              insight.type === 'warning' ? 'text-warning' :
+                              insight.type === 'danger' ? 'text-danger' : 'text-info';
+            html += `
+                <div class="insight-item">
+                    <span class="insight-icon">${insight.icon}</span>
+                    <span class="${colorClass}">${insight.text}</span>
+                </div>
+            `;
+        });
+
+        document.getElementById('insightsContainer').innerHTML = html || '<p class="text-muted">目前沒有特別的發現</p>';
+    }
+
+    function renderRecordsTable() {
+        const tbody = document.getElementById('recordsTable');
+        tbody.innerHTML = '';
+
+        records.forEach((r, index) => {
+            let statusBadge = '';
+            let statusText = '';
+            let statusClass = '';
+            
+            if (r.value > 180) {
+                statusBadge = 'badge-high';
+                statusText = '偏高';
+                statusClass = 'table-danger';
+            } else if (r.value < 70) {
+                statusBadge = 'badge-low';
+                statusText = '偏低';
+                statusClass = 'table-warning';
+            } else {
+                statusBadge = 'badge-normal';
+                statusText = '正常';
+            }
+
+            let trendArrow = '';
+            if (index < records.length - 1) {
+                const diff = r.value - records[index + 1].value;
+                if (diff > 5) {
+                    trendArrow = '<span class="trend-arrow text-danger">↑</span>';
+                } else if (diff < -5) {
+                    trendArrow = '<span class="trend-arrow text-success">↓</span>';
+                } else {
+                    trendArrow = '<span class="trend-arrow text-secondary">→</span>';
+                }
+            }
+
+            tbody.innerHTML += `
+                <tr class="${statusClass}">
+                    <td>${r.date}</td>
+                    <td>${r.time}</td>
+                    <td><span class="badge bg-secondary">${r.timing}</span></td>
+                    <td><strong>${r.value}</strong> mg/dL</td>
+                    <td><span class="status-badge ${statusBadge}">${statusText}</span></td>
+                    <td>${trendArrow}</td>
+                    <td>${r.note || '-'}</td>
+                    <td class="no-print">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${r.id}')">
+                            ✕
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // PDF Report Generation
+    async function generatePDFReport() {
+        if (records.length === 0) {
+            alert('沒有記錄可以生成報表');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        let yPos = 20;
+        
+        // Title
+        pdf.setFontSize(20);
+        pdf.text('血糖監測報表', 105, yPos, { align: 'center' });
+        yPos += 15;
+        
+        // User Info
+        pdf.setFontSize(12);
+        pdf.text(`姓名: ${userProfile.name}`, 20, yPos);
+        pdf.text(`性別: ${userProfile.gender}`, 80, yPos);
+        
+        const birthDate = new Date(userProfile.birthdate);
+        const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        pdf.text(`年齡: ${age}歲`, 120, yPos);
+        
+        const today = new Date().toLocaleDateString('zh-TW');
+        pdf.text(`報表日期: ${today}`, 160, yPos);
+        yPos += 10;
+        
+        // Line
+        pdf.line(20, yPos, 190, yPos);
+        yPos += 10;
+        
+        // Summary Stats
+        pdf.setFontSize(14);
+        pdf.text('統計摘要', 20, yPos);
+        yPos += 8;
+        
+        pdf.setFontSize(11);
+        const totalRecords = records.length;
+        const avgValue = (records.reduce((s, r) => s + r.value, 0) / totalRecords).toFixed(1);
+        const maxValue = Math.max(...records.map(r => r.value));
+        const minValue = Math.min(...records.map(r => r.value));
+        
+        pdf.text(`總記錄數: ${totalRecords} 筆`, 20, yPos);
+        pdf.text(`平均血糖: ${avgValue} mg/dL`, 70, yPos);
+        pdf.text(`最高值: ${maxValue} mg/dL`, 120, yPos);
+        pdf.text(`最低值: ${minValue} mg/dL`, 160, yPos);
+        yPos += 10;
+        
+        // Anomaly Stats
+        const highCount = records.filter(r => r.value > 180).length;
+        const lowCount = records.filter(r => r.value < 70).length;
+        const normalCount = records.filter(r => r.value >= 70 && r.value <= 180).length;
+        
+        pdf.setFillColor(255, 230, 230);
+        pdf.rect(20, yPos, 50, 8, 'F');
+        pdf.text(`偏高: ${highCount} 次 (${(highCount/totalRecords*100).toFixed(1)}%)`, 22, yPos + 6);
+        
+        pdf.setFillColor(230, 255, 230);
+        pdf.rect(75, yPos, 50, 8, 'F');
+        pdf.text(`正常: ${normalCount} 次 (${(normalCount/totalRecords*100).toFixed(1)}%)`, 77, yPos + 6);
+        
+        pdf.setFillColor(255, 248, 220);
+        pdf.rect(130, yPos, 50, 8, 'F');
+        pdf.text(`偏低: ${lowCount} 次 (${(lowCount/totalRecords*100).toFixed(1)}%)`, 132, yPos + 6);
+        yPos += 15;
+        
+        // Trend Analysis
+        pdf.setFontSize(14);
+        pdf.text('趨勢分析', 20, yPos);
+        yPos += 8;
+        
+        const recent10 = records.slice(0, Math.min(10, records.length));
+        const trend = calculateTrend(recent10);
+        
+        pdf.setFontSize(11);
+        let trendText = '';
+        if (trend.direction === 'rising') {
+            trendText = `血糖呈現上升趨勢，近期平均上升 ${trend.avgChange.toFixed(1)} mg/dL`;
+        } else if (trend.direction === 'falling') {
+            trendText = `血糖呈現下降趨勢，近期平均下降 ${Math.abs(trend.avgChange).toFixed(1)} mg/dL`;
+        } else {
+            trendText = '血糖控制穩定，波動在正常範圍內';
+        }
+        pdf.text(trendText, 20, yPos);
+        yPos += 10;
+        
+        // Capture Chart
+        try {
+            const chartCanvas = document.getElementById('trendChart');
+            const chartImage = chartCanvas.toDataURL('image/png');
+            pdf.addImage(chartImage, 'PNG', 20, yPos, 170, 80);
+            yPos += 90;
+        } catch (error) {
+            console.error('Error capturing chart:', error);
+        }
+        
+        // Add new page for records
+        pdf.addPage();
+        yPos = 20;
+        
+        pdf.setFontSize(14);
+        pdf.text('血糖記錄明細', 20, yPos);
+        yPos += 10;
+        
+        // Table Header
+        pdf.setFontSize(10);
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(20, yPos, 170, 8, 'F');
+        pdf.text('日期', 22, yPos + 6);
+        pdf.text('時間', 47, yPos + 6);
+        pdf.text('時機', 67, yPos + 6);
+        pdf.text('血糖值', 92, yPos + 6);
+        pdf.text('狀態', 117, yPos + 6);
+        pdf.text('備註', 137, yPos + 6);
+        yPos += 10;
+        
+        // Table Rows - Highlight anomalies
+        const recentRecords = records.slice(0, 50); // Show latest 50 records
+        recentRecords.forEach(r => {
+            if (yPos > 270) {
+                pdf.addPage();
+                yPos = 20;
+            }
+            
+            let statusText = '正常';
+            let highlight = false;
+            
+            if (r.value > 180) {
+                statusText = '偏高';
+                highlight = true;
+                pdf.setFillColor(255, 230, 230);
+                pdf.rect(20, yPos - 2, 170, 7, 'F');
+            } else if (r.value < 70) {
+                statusText = '偏低';
+                highlight = true;
+                pdf.setFillColor(255, 248, 220);
+                pdf.rect(20, yPos - 2, 170, 7, 'F');
+            }
+            
+            pdf.text(r.date, 22, yPos + 4);
+            pdf.text(r.time, 47, yPos + 4);
+            pdf.text(r.timing, 67, yPos + 4);
+            pdf.text(`${r.value}`, 92, yPos + 4);
+            pdf.text(statusText, 117, yPos + 4);
+            pdf.text(r.note || '-', 137, yPos + 4);
+            
+            yPos += 7;
+        });
+        
+        // Footer
+        const pageCount = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(9);
+            pdf.text(`第 ${i} 頁，共 ${pageCount} 頁`, 105, 285, { align: 'center' });
+            pdf.text(`生成時間: ${new Date().toLocaleString('zh-TW')}`, 105, 290, { align: 'center' });
+        }
+        
+        // Save
+        const fileName = `血糖報表_${userProfile.name}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '')}.pdf`;
+        pdf.save(fileName);
+    }
+</script>
+
 </body>
 </html>
