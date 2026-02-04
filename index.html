@@ -198,6 +198,113 @@
             display: none;
         }
         
+        /* PDF Print Styles */
+        .pdf-report {
+            background: white;
+            padding: 40px;
+            max-width: 210mm;
+            margin: 0 auto;
+        }
+        
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+        
+        .pdf-section {
+            margin-bottom: 30px;
+        }
+        
+        .pdf-section-title {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-left: 4px solid #667eea;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .pdf-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .pdf-stat-box {
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        
+        .pdf-stat-label {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .pdf-stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        
+        .pdf-table th {
+            background: #f8f9fa;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            font-weight: bold;
+        }
+        
+        .pdf-table td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pdf-table tr.high-bg {
+            background: #ffe5e5;
+        }
+        
+        .pdf-table tr.low-bg {
+            background: #fff8e1;
+        }
+        
+        .pdf-anomaly-bars {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .pdf-anomaly-bar {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        
+        .pdf-anomaly-bar.high {
+            background: #ffe5e5;
+            color: #dc3545;
+        }
+        
+        .pdf-anomaly-bar.normal {
+            background: #e8f5e9;
+            color: #198754;
+        }
+        
+        .pdf-anomaly-bar.low {
+            background: #fff8e1;
+            color: #ff8f00;
+        }
+        
         @media print {
             body { background: white; }
             .no-print { display: none !important; }
@@ -205,6 +312,7 @@
         
         @media (max-width: 768px) {
             .stat-value { font-size: 1.5rem; }
+            .pdf-stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -267,6 +375,12 @@
 
 <!-- Main App Container -->
 <div id="app-container" class="container main-container">
+    <!-- Header -->
+    <div class="text-center mb-3 no-print">
+        <h1 class="text-white mb-2">🩸 血糖趨勢智能管家</h1>
+        <p class="text-white-50 mb-0">專注於趨勢分析，掌握血糖變化</p>
+    </div>
+
     <!-- User Info Bar -->
     <div class="user-info-bar no-print">
         <div>
@@ -275,16 +389,10 @@
         <button class="btn btn-sm btn-outline-danger" onclick="logout()">登出</button>
     </div>
 
-    <!-- Header -->
-    <div class="text-center mb-4">
-        <h1 class="text-white mb-2">🩸 血糖趨勢智能管家</h1>
-        <p class="text-white-50">專注於趨勢分析，掌握血糖變化</p>
-    </div>
-
     <!-- Trend Alert Section -->
-    <div id="trendAlertSection"></div>
+    <div id="trendAlertSection" class="no-print"></div>
 
-    <!-- Quick Stats - Fixed Size -->
+    <!-- Quick Stats -->
     <div class="row mb-4">
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
@@ -361,7 +469,7 @@
     <div class="card" id="chartCard">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
             <span>📊 血糖趨勢圖</span>
-            <div class="period-selector">
+            <div class="period-selector no-print">
                 <button class="period-btn" onclick="changePeriod(7)">7天</button>
                 <button class="period-btn active" onclick="changePeriod(14)">14天</button>
                 <button class="period-btn" onclick="changePeriod(30)">30天</button>
@@ -383,23 +491,25 @@
 
     <!-- Pattern Analysis -->
     <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
                 <div class="card-header bg-info text-white">
                     ⏰ 時段分析
                 </div>
-                <div class="card-body">
-                    <canvas id="timingChart" height="200"></canvas>
+                <div class="card-body d-flex flex-column">
+                    <div style="flex: 1; position: relative; min-height: 300px;">
+                        <canvas id="timingChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
                 <div class="card-header bg-warning text-dark">
                     📈 異常記錄統計
                 </div>
-                <div class="card-body">
-                    <div id="anomalyStats"></div>
+                <div class="card-body d-flex flex-column">
+                    <div id="anomalyStats" style="flex: 1;"></div>
                 </div>
             </div>
         </div>
@@ -435,6 +545,9 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden PDF Report Container -->
+<div id="pdfReportContainer" style="position: absolute; left: -9999px; top: 0;"></div>
 
 <script>
     // Firebase Configuration
@@ -506,7 +619,6 @@
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             
-            // Save user profile to Firestore
             await db.collection('users').doc(userCredential.user.uid).set({
                 name: name,
                 gender: gender,
@@ -551,7 +663,6 @@
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
-        // Display user info
         document.getElementById('userName').textContent = userProfile.name;
         document.getElementById('userGender').textContent = userProfile.gender;
         
@@ -559,7 +670,6 @@
         const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
         document.getElementById('userAge').textContent = age;
         
-        // Initialize form
         const now = new Date();
         document.getElementById('dateInput').valueAsDate = now;
         document.getElementById('timeInput').value = now.toTimeString().substring(0, 5);
@@ -573,7 +683,6 @@
         }
     }
 
-    // Load records from Firestore
     async function loadRecords() {
         try {
             const snapshot = await db.collection('glucoseRecords')
@@ -592,7 +701,6 @@
         }
     }
 
-    // Form submission
     document.getElementById('glucoseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -928,7 +1036,8 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
                 plugins: {
                     legend: { display: false }
                 },
@@ -951,31 +1060,33 @@
         const total = records.length || 1;
         
         document.getElementById('anomalyStats').innerHTML = `
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span>🔴 偏高 (>180)</span>
-                    <strong class="text-danger">${highCount} 次 (${(highCount/total*100).toFixed(1)}%)</strong>
+            <div class="d-flex flex-column h-100 justify-content-around">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size: 1.1rem;">🔴 偏高 (>180)</span>
+                        <strong class="text-danger" style="font-size: 1.2rem;">${highCount} 次 (${(highCount/total*100).toFixed(1)}%)</strong>
+                    </div>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-danger" style="width: ${highCount/total*100}%"></div>
+                    </div>
                 </div>
-                <div class="progress" style="height: 25px;">
-                    <div class="progress-bar bg-danger" style="width: ${highCount/total*100}%"></div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size: 1.1rem;">🟢 正常 (70-180)</span>
+                        <strong class="text-success" style="font-size: 1.2rem;">${normalCount} 次 (${(normalCount/total*100).toFixed(1)}%)</strong>
+                    </div>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success" style="width: ${normalCount/total*100}%"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span>🟢 正常 (70-180)</span>
-                    <strong class="text-success">${normalCount} 次 (${(normalCount/total*100).toFixed(1)}%)</strong>
-                </div>
-                <div class="progress" style="height: 25px;">
-                    <div class="progress-bar bg-success" style="width: ${normalCount/total*100}%"></div>
-                </div>
-            </div>
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span>🟡 偏低 (<70)</span>
-                    <strong class="text-warning">${lowCount} 次 (${(lowCount/total*100).toFixed(1)}%)</strong>
-                </div>
-                <div class="progress" style="height: 25px;">
-                    <div class="progress-bar bg-warning" style="width: ${lowCount/total*100}%"></div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size: 1.1rem;">🟡 偏低 (<70)</span>
+                        <strong class="text-warning" style="font-size: 1.2rem;">${lowCount} 次 (${(lowCount/total*100).toFixed(1)}%)</strong>
+                    </div>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-warning" style="width: ${lowCount/total*100}%"></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -1113,170 +1224,197 @@
         });
     }
 
-    // PDF Report Generation
+    // PDF Report Generation using html2canvas
     async function generatePDFReport() {
         if (records.length === 0) {
             alert('沒有記錄可以生成報表');
             return;
         }
 
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        
-        let yPos = 20;
-        
-        // Title
-        pdf.setFontSize(20);
-        pdf.text('血糖監測報表', 105, yPos, { align: 'center' });
-        yPos += 15;
-        
-        // User Info
-        pdf.setFontSize(12);
-        pdf.text(`姓名: ${userProfile.name}`, 20, yPos);
-        pdf.text(`性別: ${userProfile.gender}`, 80, yPos);
-        
-        const birthDate = new Date(userProfile.birthdate);
-        const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-        pdf.text(`年齡: ${age}歲`, 120, yPos);
-        
-        const today = new Date().toLocaleDateString('zh-TW');
-        pdf.text(`報表日期: ${today}`, 160, yPos);
-        yPos += 10;
-        
-        // Line
-        pdf.line(20, yPos, 190, yPos);
-        yPos += 10;
-        
-        // Summary Stats
-        pdf.setFontSize(14);
-        pdf.text('統計摘要', 20, yPos);
-        yPos += 8;
-        
-        pdf.setFontSize(11);
-        const totalRecords = records.length;
-        const avgValue = (records.reduce((s, r) => s + r.value, 0) / totalRecords).toFixed(1);
-        const maxValue = Math.max(...records.map(r => r.value));
-        const minValue = Math.min(...records.map(r => r.value));
-        
-        pdf.text(`總記錄數: ${totalRecords} 筆`, 20, yPos);
-        pdf.text(`平均血糖: ${avgValue} mg/dL`, 70, yPos);
-        pdf.text(`最高值: ${maxValue} mg/dL`, 120, yPos);
-        pdf.text(`最低值: ${minValue} mg/dL`, 160, yPos);
-        yPos += 10;
-        
-        // Anomaly Stats
-        const highCount = records.filter(r => r.value > 180).length;
-        const lowCount = records.filter(r => r.value < 70).length;
-        const normalCount = records.filter(r => r.value >= 70 && r.value <= 180).length;
-        
-        pdf.setFillColor(255, 230, 230);
-        pdf.rect(20, yPos, 50, 8, 'F');
-        pdf.text(`偏高: ${highCount} 次 (${(highCount/totalRecords*100).toFixed(1)}%)`, 22, yPos + 6);
-        
-        pdf.setFillColor(230, 255, 230);
-        pdf.rect(75, yPos, 50, 8, 'F');
-        pdf.text(`正常: ${normalCount} 次 (${(normalCount/totalRecords*100).toFixed(1)}%)`, 77, yPos + 6);
-        
-        pdf.setFillColor(255, 248, 220);
-        pdf.rect(130, yPos, 50, 8, 'F');
-        pdf.text(`偏低: ${lowCount} 次 (${(lowCount/totalRecords*100).toFixed(1)}%)`, 132, yPos + 6);
-        yPos += 15;
-        
-        // Trend Analysis
-        pdf.setFontSize(14);
-        pdf.text('趨勢分析', 20, yPos);
-        yPos += 8;
-        
-        const recent10 = records.slice(0, Math.min(10, records.length));
-        const trend = calculateTrend(recent10);
-        
-        pdf.setFontSize(11);
-        let trendText = '';
-        if (trend.direction === 'rising') {
-            trendText = `血糖呈現上升趨勢，近期平均上升 ${trend.avgChange.toFixed(1)} mg/dL`;
-        } else if (trend.direction === 'falling') {
-            trendText = `血糖呈現下降趨勢，近期平均下降 ${Math.abs(trend.avgChange).toFixed(1)} mg/dL`;
-        } else {
-            trendText = '血糖控制穩定，波動在正常範圍內';
-        }
-        pdf.text(trendText, 20, yPos);
-        yPos += 10;
-        
-        // Capture Chart
+        // Show loading
+        const originalText = event.target.textContent;
+        event.target.textContent = '生成中...';
+        event.target.disabled = true;
+
         try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Calculate statistics
+            const totalRecords = records.length;
+            const avgValue = (records.reduce((s, r) => s + r.value, 0) / totalRecords).toFixed(1);
+            const maxValue = Math.max(...records.map(r => r.value));
+            const minValue = Math.min(...records.map(r => r.value));
+            const highCount = records.filter(r => r.value > 180).length;
+            const lowCount = records.filter(r => r.value < 70).length;
+            const normalCount = records.filter(r => r.value >= 70 && r.value <= 180).length;
+            
+            const birthDate = new Date(userProfile.birthdate);
+            const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+            const today = new Date().toLocaleDateString('zh-TW');
+            
+            // Create PDF report HTML
+            const reportHtml = `
+                <div class="pdf-report" style="width: 210mm; padding: 20mm; background: white; font-family: Arial, sans-serif;">
+                    <div class="pdf-header" style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #667eea; padding-bottom: 20px;">
+                        <h1 style="color: #667eea; margin-bottom: 10px;">🩸 血糖監測報表</h1>
+                        <div style="font-size: 14px; color: #6c757d;">
+                            姓名：${userProfile.name} | 性別：${userProfile.gender} | 年齡：${age}歲 | 報表日期：${today}
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-section">
+                        <div class="pdf-section-title" style="background: #f8f9fa; padding: 10px 15px; border-left: 4px solid #667eea; font-weight: bold; margin-bottom: 15px;">
+                            統計摘要
+                        </div>
+                        <div class="pdf-stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
+                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">總記錄數</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #667eea;">${totalRecords}</div>
+                            </div>
+                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
+                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">平均血糖</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #667eea;">${avgValue}</div>
+                            </div>
+                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
+                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">最高值</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #dc3545;">${maxValue}</div>
+                            </div>
+                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
+                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">最低值</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${minValue}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="pdf-anomaly-bars" style="display: flex; gap: 10px; margin-top: 15px;">
+                            <div class="pdf-anomaly-bar high" style="flex: 1; padding: 15px; text-align: center; border-radius: 8px; background: #ffe5e5; color: #dc3545;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">偏高 (&gt;180)</div>
+                                <div style="font-size: 20px;">${highCount} 次 (${(highCount/totalRecords*100).toFixed(1)}%)</div>
+                            </div>
+                            <div class="pdf-anomaly-bar normal" style="flex: 1; padding: 15px; text-align: center; border-radius: 8px; background: #e8f5e9; color: #198754;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">正常 (70-180)</div>
+                                <div style="font-size: 20px;">${normalCount} 次 (${(normalCount/totalRecords*100).toFixed(1)}%)</div>
+                            </div>
+                            <div class="pdf-anomaly-bar low" style="flex: 1; padding: 15px; text-align: center; border-radius: 8px; background: #fff8e1; color: #ff8f00;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">偏低 (&lt;70)</div>
+                                <div style="font-size: 20px;">${lowCount} 次 (${(lowCount/totalRecords*100).toFixed(1)}%)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-section" style="margin-top: 30px;">
+                        <div class="pdf-section-title" style="background: #f8f9fa; padding: 10px 15px; border-left: 4px solid #667eea; font-weight: bold; margin-bottom: 15px;">
+                            血糖趨勢圖
+                        </div>
+                        <div id="chartImageContainer"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Insert report HTML into hidden container
+            const container = document.getElementById('pdfReportContainer');
+            container.innerHTML = reportHtml;
+            
+            // Capture chart image
             const chartCanvas = document.getElementById('trendChart');
             const chartImage = chartCanvas.toDataURL('image/png');
-            pdf.addImage(chartImage, 'PNG', 20, yPos, 170, 80);
-            yPos += 90;
+            
+            // Add chart to report
+            const chartContainer = container.querySelector('#chartImageContainer');
+            chartContainer.innerHTML = `<img src="${chartImage}" style="width: 100%; height: auto;">`;
+            
+            // Generate PDF from HTML using html2canvas
+            const reportElement = container.querySelector('.pdf-report');
+            const canvas = await html2canvas(reportElement, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 210;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            
+            // Add records table on new page
+            pdf.addPage();
+            
+            const tableHtml = `
+                <div class="pdf-report" style="width: 210mm; padding: 20mm; background: white; font-family: Arial, sans-serif;">
+                    <div class="pdf-section-title" style="background: #f8f9fa; padding: 10px 15px; border-left: 4px solid #667eea; font-weight: bold; margin-bottom: 15px;">
+                        血糖記錄明細（最近50筆）
+                    </div>
+                    <table class="pdf-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr>
+                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">日期</th>
+                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">時間</th>
+                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">時機</th>
+                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">血糖值</th>
+                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">狀態</th>
+                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${records.slice(0, 50).map(r => {
+                                let statusText = '正常';
+                                let rowClass = '';
+                                
+                                if (r.value > 180) {
+                                    statusText = '偏高';
+                                    rowClass = 'background: #ffe5e5;';
+                                } else if (r.value < 70) {
+                                    statusText = '偏低';
+                                    rowClass = 'background: #fff8e1;';
+                                }
+                                
+                                return `
+                                    <tr style="${rowClass}">
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.date}</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.time}</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.timing}</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold;">${r.value} mg/dL</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${statusText}</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.note || '-'}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; text-align: center; color: #6c757d; font-size: 10px;">
+                        生成時間：${new Date().toLocaleString('zh-TW')}
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = tableHtml;
+            const tableElement = container.querySelector('.pdf-report');
+            const tableCanvas = await html2canvas(tableElement, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            
+            const tableImgData = tableCanvas.toDataURL('image/png');
+            const tableImgHeight = tableCanvas.height * imgWidth / tableCanvas.width;
+            
+            pdf.addImage(tableImgData, 'PNG', 0, 0, imgWidth, tableImgHeight);
+            
+            // Clean up
+            container.innerHTML = '';
+            
+            // Save PDF
+            const fileName = `血糖報表_${userProfile.name}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '')}.pdf`;
+            pdf.save(fileName);
+            
         } catch (error) {
-            console.error('Error capturing chart:', error);
+            console.error('PDF generation error:', error);
+            alert('PDF 生成失敗，請稍後再試');
+        } finally {
+            event.target.textContent = originalText;
+            event.target.disabled = false;
         }
-        
-        // Add new page for records
-        pdf.addPage();
-        yPos = 20;
-        
-        pdf.setFontSize(14);
-        pdf.text('血糖記錄明細', 20, yPos);
-        yPos += 10;
-        
-        // Table Header
-        pdf.setFontSize(10);
-        pdf.setFillColor(240, 240, 240);
-        pdf.rect(20, yPos, 170, 8, 'F');
-        pdf.text('日期', 22, yPos + 6);
-        pdf.text('時間', 47, yPos + 6);
-        pdf.text('時機', 67, yPos + 6);
-        pdf.text('血糖值', 92, yPos + 6);
-        pdf.text('狀態', 117, yPos + 6);
-        pdf.text('備註', 137, yPos + 6);
-        yPos += 10;
-        
-        // Table Rows - Highlight anomalies
-        const recentRecords = records.slice(0, 50); // Show latest 50 records
-        recentRecords.forEach(r => {
-            if (yPos > 270) {
-                pdf.addPage();
-                yPos = 20;
-            }
-            
-            let statusText = '正常';
-            let highlight = false;
-            
-            if (r.value > 180) {
-                statusText = '偏高';
-                highlight = true;
-                pdf.setFillColor(255, 230, 230);
-                pdf.rect(20, yPos - 2, 170, 7, 'F');
-            } else if (r.value < 70) {
-                statusText = '偏低';
-                highlight = true;
-                pdf.setFillColor(255, 248, 220);
-                pdf.rect(20, yPos - 2, 170, 7, 'F');
-            }
-            
-            pdf.text(r.date, 22, yPos + 4);
-            pdf.text(r.time, 47, yPos + 4);
-            pdf.text(r.timing, 67, yPos + 4);
-            pdf.text(`${r.value}`, 92, yPos + 4);
-            pdf.text(statusText, 117, yPos + 4);
-            pdf.text(r.note || '-', 137, yPos + 4);
-            
-            yPos += 7;
-        });
-        
-        // Footer
-        const pageCount = pdf.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            pdf.setPage(i);
-            pdf.setFontSize(9);
-            pdf.text(`第 ${i} 頁，共 ${pageCount} 頁`, 105, 285, { align: 'center' });
-            pdf.text(`生成時間: ${new Date().toLocaleString('zh-TW')}`, 105, 290, { align: 'center' });
-        }
-        
-        // Save
-        const fileName = `血糖報表_${userProfile.name}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '')}.pdf`;
-        pdf.save(fileName);
     }
 </script>
 
