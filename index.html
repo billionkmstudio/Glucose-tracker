@@ -314,6 +314,101 @@
             .stat-value { font-size: 1.5rem; }
             .pdf-stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
+        
+        /* Footer Styles */
+        .site-footer {
+            background: transparent;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        
+        .footer-links {
+            margin-bottom: 12px;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+        
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+        }
+        
+        /* Google Login Button */
+        .google-login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: white;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3c4043;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .google-login-btn:hover {
+            background: #f8f9fa;
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3);
+        }
+        
+        .google-icon {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #6c757d;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .divider span {
+            padding: 0 10px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 576px) {
+            .footer-links a {
+                display: block;
+                margin: 8px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -338,6 +433,21 @@
             <input type="password" class="form-control" id="loginPassword" required>
         </div>
         <button type="submit" class="btn btn-primary w-100">登入</button>
+        
+        <div class="divider">
+            <span>或</span>
+        </div>
+        
+        <button type="button" class="google-login-btn" onclick="signInWithGoogle()">
+            <svg class="google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            使用 Google 帳號登入
+        </button>
+        
         <div id="loginError" class="alert alert-danger mt-3" style="display: none;"></div>
     </form>
     
@@ -546,6 +656,19 @@
     </div>
 </div>
 
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="footer-content">
+        <div class="footer-links">
+            <a href="terms-of-use.html" target="_blank">Terms of Use</a>
+            <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
+        </div>
+        <div class="footer-copyright">
+            Copyright © Billion Studio 2026. All rights reserved.
+        </div>
+    </div>
+</footer>
+
 <!-- Hidden PDF Report Container -->
 <div id="pdfReportContainer" style="position: absolute; left: -9999px; top: 0;"></div>
 
@@ -639,6 +762,46 @@
         setTimeout(() => {
             errorEl.style.display = 'none';
         }, 5000);
+    }
+
+    // Google Sign In
+    async function signInWithGoogle() {
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+            
+            const result = await auth.signInWithPopup(provider);
+            const user = result.user;
+            
+            // Check if user profile exists
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            
+            if (!userDoc.exists) {
+                // New Google user - need to create profile
+                // Show a simple prompt for additional info
+                const name = user.displayName || prompt('請輸入您的姓名：') || 'User';
+                const gender = prompt('請輸入性別 (男/女/其他)：') || '未指定';
+                const birthdate = prompt('請輸入出生日期 (YYYY-MM-DD)：') || '2000-01-01';
+                
+                await db.collection('users').doc(user.uid).set({
+                    name: name,
+                    gender: gender,
+                    birthdate: birthdate,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    provider: 'google',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+        } catch (error) {
+            console.error('Google sign in error:', error);
+            if (error.code !== 'auth/popup-closed-by-user') {
+                showError('loginError', 'Google 登入失敗：' + error.message);
+            }
+        }
     }
 
     async function loadUserProfile() {
