@@ -156,13 +156,20 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            padding: 40px 0 0 0;
+        }
+        
+        .auth-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
             justify-content: center;
             padding: 20px 0;
         }
         
         .auth-container {
             max-width: 450px;
-            margin: 0 auto 30px auto;
+            width: 100%;
             background: white;
             padding: 40px;
             border-radius: 12px;
@@ -420,9 +427,13 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 9999;
-            display: flex !important;
+            display: none;
             align-items: center;
             justify-content: center;
+        }
+        
+        .google-modal.show {
+            display: flex;
         }
         
         .google-modal-content {
@@ -458,8 +469,9 @@
 
 <!-- Auth Wrapper -->
 <div id="auth-wrapper" class="auth-wrapper" style="display: none;">
-    <!-- Auth Container -->
-    <div id="auth-container" class="auth-container">
+    <div class="auth-content">
+        <!-- Auth Container -->
+        <div id="auth-container" class="auth-container">
     <h2 class="text-center mb-4">🩸 血糖趨勢智能管家</h2>
     
     <div class="auth-tabs">
@@ -526,9 +538,10 @@
         <div id="registerError" class="alert alert-danger mt-3" style="display: none;"></div>
     </form>
     </div>
+    </div>
     
     <!-- Auth Footer -->
-    <footer class="site-footer" style="margin-top: 20px;">
+    <footer class="site-footer" style="margin-top: 0; padding: 20px 0;">
         <div class="footer-content">
             <div class="footer-links">
                 <a href="terms-of-use.html" target="_blank">Terms of Use</a>
@@ -542,7 +555,7 @@
 </div>
 
 <!-- Google User Info Modal -->
-<div id="googleUserModal" class="google-modal" style="display: none;">
+<div id="googleUserModal" class="google-modal">
     <div class="google-modal-content">
         <h3 style="text-align: center; margin-bottom: 20px; color: #333;">完成您的個人資料</h3>
         <form id="googleUserForm">
@@ -889,11 +902,12 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('googleBirthdate').setAttribute('max', today);
         
-        modal.style.display = 'flex';
+        modal.classList.add('show');
     }
     
     function hideGoogleUserModal() {
-        document.getElementById('googleUserModal').style.display = 'none';
+        const modal = document.getElementById('googleUserModal');
+        modal.classList.remove('show');
         document.getElementById('googleUserForm').reset();
     }
     
@@ -905,7 +919,18 @@
         const gender = document.getElementById('googleGender').value;
         const birthdate = document.getElementById('googleBirthdate').value;
         
+        // 驗證必填欄位
+        if (!name || !gender || !birthdate) {
+            alert('請填寫所有必填欄位');
+            return;
+        }
+        
         try {
+            // 禁用按鈕防止重複提交
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '處理中...';
+            
             await db.collection('users').doc(pendingGoogleUser.uid).set({
                 name: name,
                 gender: gender,
@@ -922,7 +947,12 @@
             
         } catch (error) {
             console.error('Error creating user profile:', error);
-            alert('建立個人資料失敗，請稍後再試');
+            alert('建立個人資料失敗：' + error.message + '\n請檢查網絡連接後再試');
+            
+            // 重新啟用按鈕
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '完成';
         }
     });
 
