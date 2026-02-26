@@ -1,18 +1,13 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>血糖趨勢智能管家</title>
+    <title>Blood Glucose Trend Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <style>
         :root {
@@ -150,16 +145,16 @@
             gap: 10px;
             margin-bottom: 10px;
         }
-        
-        /* Auth Styles */
-        .auth-wrapper {
+
+        /* Setup Screen */
+        .setup-wrapper {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
             padding: 40px 0 0 0;
         }
         
-        .auth-content {
+        .setup-content {
             flex: 1;
             display: flex;
             align-items: center;
@@ -167,35 +162,13 @@
             padding: 20px 0;
         }
         
-        .auth-container {
+        .setup-container {
             max-width: 450px;
             width: 100%;
             background: white;
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        }
-        
-        .auth-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .auth-tab {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: #f8f9fa;
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .auth-tab.active {
-            background: #667eea;
-            color: white;
         }
         
         .user-info-bar {
@@ -254,18 +227,6 @@
             border-radius: 8px;
         }
         
-        .pdf-stat-label {
-            color: #6c757d;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-        
-        .pdf-stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-        }
-        
         .pdf-table {
             width: 100%;
             border-collapse: collapse;
@@ -284,14 +245,6 @@
             border: 1px solid #dee2e6;
         }
         
-        .pdf-table tr.high-bg {
-            background: #ffe5e5;
-        }
-        
-        .pdf-table tr.low-bg {
-            background: #fff8e1;
-        }
-        
         .pdf-anomaly-bars {
             display: flex;
             gap: 10px;
@@ -305,20 +258,9 @@
             border-radius: 8px;
         }
         
-        .pdf-anomaly-bar.high {
-            background: #ffe5e5;
-            color: #dc3545;
-        }
-        
-        .pdf-anomaly-bar.normal {
-            background: #e8f5e9;
-            color: #198754;
-        }
-        
-        .pdf-anomaly-bar.low {
-            background: #fff8e1;
-            color: #ff8f00;
-        }
+        .pdf-anomaly-bar.high { background: #ffe5e5; color: #dc3545; }
+        .pdf-anomaly-bar.normal { background: #e8f5e9; color: #198754; }
+        .pdf-anomaly-bar.low { background: #fff8e1; color: #ff8f00; }
         
         @media print {
             body { background: white; }
@@ -368,179 +310,89 @@
             color: rgba(255, 255, 255, 0.6);
             font-size: 0.85rem;
         }
-        
-        /* Google Login Button */
-        .google-login-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            padding: 12px;
-            margin-top: 15px;
-            background: white;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #3c4043;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .google-login-btn:hover {
-            background: #f8f9fa;
-            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3);
-        }
-        
-        .google-icon {
-            width: 18px;
-            height: 18px;
-        }
-        
-        .divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 20px 0;
-            color: #6c757d;
-        }
-        
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .divider span {
-            padding: 0 10px;
-            font-size: 0.9rem;
-        }
-        
-        /* Google Modal Styles */
-        .google-modal {
+
+        /* Disclaimer Modal */
+        .disclaimer-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
             z-index: 9999;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         
-        .google-modal.show {
-            display: flex;
-        }
-        
-        .google-modal-content {
+        .disclaimer-box {
             background: white;
-            padding: 30px;
             border-radius: 12px;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            animation: modalSlideIn 0.3s ease-out;
+            padding: 36px 32px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+            text-align: center;
         }
         
-        @keyframes modalSlideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        .disclaimer-box h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
         }
         
+        .disclaimer-box p {
+            color: #444;
+            line-height: 1.7;
+            margin-bottom: 24px;
+            font-size: 0.97rem;
+        }
+
         @media (max-width: 576px) {
-            .footer-links a {
-                display: block;
-                margin: 8px 0;
-            }
+            .footer-links a { display: block; margin: 8px 0; }
         }
     </style>
 </head>
 <body>
 
-<!-- Auth Wrapper -->
-<div id="auth-wrapper" class="auth-wrapper" style="display: none;">
-    <div class="auth-content">
-        <!-- Auth Container -->
-        <div id="auth-container" class="auth-container">
-    <h2 class="text-center mb-4">🩸 血糖趨勢智能管家</h2>
-    
-    <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthTab('login')">登入</button>
-        <button class="auth-tab" onclick="switchAuthTab('register')">註冊</button>
+<!-- Disclaimer Modal -->
+<div id="disclaimerOverlay" class="disclaimer-overlay">
+    <div class="disclaimer-box">
+        <h3>⚠️ Important Notice</h3>
+        <p>
+            This system is for <strong>demonstration purposes only</strong>. All user data is stored exclusively in your own browser's local storage. This system does not collect, transmit, or retain any user data on any server.
+        </p>
+        <button class="btn btn-primary px-5" onclick="acceptDisclaimer()">I Understand &amp; Continue</button>
     </div>
-    
-    <!-- Login Form -->
-    <form id="loginForm" style="display: block;">
-        <div class="mb-3">
-            <label class="form-label">電子郵件</label>
-            <input type="email" class="form-control" id="loginEmail" required>
+</div>
+
+<!-- Setup Screen (Profile) -->
+<div id="setup-wrapper" class="setup-wrapper" style="display: none;">
+    <div class="setup-content">
+        <div class="setup-container">
+            <h2 class="text-center mb-4">🩸 Blood Glucose Trend Manager</h2>
+            <p class="text-center text-muted mb-4">Please set up your profile to get started.</p>
+            <form id="setupForm">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" id="setupName" required placeholder="Your name">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" id="setupGender" required>
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" class="form-control" id="setupBirthdate" required max="2024-12-31">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Get Started</button>
+            </form>
         </div>
-        <div class="mb-3">
-            <label class="form-label">密碼</label>
-            <input type="password" class="form-control" id="loginPassword" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">登入</button>
-        
-        <div class="divider">
-            <span>或</span>
-        </div>
-        
-        <button type="button" class="google-login-btn" onclick="signInWithGoogle()">
-            <svg class="google-icon" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            使用 Google 帳號登入
-        </button>
-        
-        <div id="loginError" class="alert alert-danger mt-3" style="display: none;"></div>
-    </form>
-    
-    <!-- Register Form -->
-    <form id="registerForm" style="display: none;">
-        <div class="mb-3">
-            <label class="form-label">電子郵件</label>
-            <input type="email" class="form-control" id="registerEmail" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">密碼（至少6個字元）</label>
-            <input type="password" class="form-control" id="registerPassword" required minlength="6">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">用戶名稱</label>
-            <input type="text" class="form-control" id="registerName" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">性別</label>
-            <select class="form-select" id="registerGender" required>
-                <option value="">請選擇</option>
-                <option value="男">男</option>
-                <option value="女">女</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">出生日期</label>
-            <input type="date" class="form-control" id="registerBirthdate" required max="2024-12-31">
-        </div>
-        <button type="submit" class="btn btn-success w-100">註冊</button>
-        <div id="registerError" class="alert alert-danger mt-3" style="display: none;"></div>
-    </form>
     </div>
-    </div>
-    
-    <!-- Auth Footer -->
+
     <footer class="site-footer" style="margin-top: 0; padding: 20px 0;">
         <div class="footer-content">
             <div class="footer-links">
@@ -548,52 +400,26 @@
                 <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
             </div>
             <div class="footer-copyright">
-                Copyright © Billion Studio 2026. All rights reserved.
+                Copyright &copy; 2026 Billion Studio. All rights reserved.
             </div>
         </div>
     </footer>
-</div>
-
-<!-- Google User Info Modal -->
-<div id="googleUserModal" class="google-modal">
-    <div class="google-modal-content">
-        <h3 style="text-align: center; margin-bottom: 20px; color: #333;">完成您的個人資料</h3>
-        <form id="googleUserForm">
-            <div class="mb-3">
-                <label class="form-label">姓名</label>
-                <input type="text" class="form-control" id="googleName" required readonly style="background-color: #f8f9fa;">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">性別</label>
-                <select class="form-select" id="googleGender" required>
-                    <option value="">請選擇</option>
-                    <option value="男">男</option>
-                    <option value="女">女</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">出生日期</label>
-                <input type="date" class="form-control" id="googleBirthdate" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">完成</button>
-        </form>
-    </div>
 </div>
 
 <!-- Main App Container -->
 <div id="app-container" class="container main-container">
     <!-- Header -->
     <div class="text-center mb-3 no-print">
-        <h1 class="text-white mb-2">🩸 血糖趨勢智能管家</h1>
-        <p class="text-white-50 mb-0">專注於趨勢分析，掌握血糖變化</p>
+        <h1 class="text-white mb-2">🩸 Blood Glucose Trend Manager</h1>
+        <p class="text-white-50 mb-0">Track trends, understand your glucose changes</p>
     </div>
 
     <!-- User Info Bar -->
     <div class="user-info-bar no-print">
         <div>
-            <strong id="userName"></strong> | <span id="userAge"></span>歲 | <span id="userGender"></span>
+            <strong id="userName"></strong> | <span id="userAge"></span> yrs | <span id="userGender"></span>
         </div>
-        <button class="btn btn-sm btn-outline-danger" onclick="logout()">登出</button>
+        <button class="btn btn-sm btn-outline-danger" onclick="resetProfile()">Reset Profile</button>
     </div>
 
     <!-- Trend Alert Section -->
@@ -603,30 +429,30 @@
     <div class="row mb-4">
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
-                <div class="stat-label">當前趨勢</div>
+                <div class="stat-label">Current Trend</div>
                 <div class="stat-value" id="currentTrend">-</div>
                 <small id="trendChange"></small>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
-                <div class="stat-label">7天平均</div>
+                <div class="stat-label">7-Day Average</div>
                 <div class="stat-value text-primary" id="avg7days">-</div>
                 <small id="avg7daysChange"></small>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
-                <div class="stat-label">最高記錄</div>
+                <div class="stat-label">Highest Record</div>
                 <div class="stat-value text-danger" id="maxValue">-</div>
                 <small id="maxDate"></small>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
-                <div class="stat-label">總記錄數</div>
+                <div class="stat-label">Total Records</div>
                 <div class="stat-value text-info" id="totalRecords">0</div>
-                <small>筆記錄</small>
+                <small>entries</small>
             </div>
         </div>
     </div>
@@ -634,39 +460,39 @@
     <!-- Input Form -->
     <div class="card no-print">
         <div class="card-header bg-primary text-white">
-            📝 新增血糖記錄
+            📝 Add Blood Glucose Record
         </div>
         <div class="card-body">
             <form id="glucoseForm" class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label">日期</label>
+                    <label class="form-label">Date</label>
                     <input type="date" class="form-control" id="dateInput" required>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">時間</label>
+                    <label class="form-label">Time</label>
                     <input type="time" class="form-control" id="timeInput" required>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">血糖值 (mg/dL)</label>
+                    <label class="form-label">Value (mg/dL)</label>
                     <input type="number" class="form-control" id="valueInput" placeholder="110" required min="20" max="600">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">測量時機</label>
+                    <label class="form-label">Timing</label>
                     <select class="form-select" id="timingInput">
-                        <option value="空腹">空腹 (晨起)</option>
-                        <option value="餐前">餐前</option>
-                        <option value="餐後1小時">餐後1小時</option>
-                        <option value="餐後2小時">餐後2小時</option>
-                        <option value="睡前">睡前</option>
-                        <option value="其他">其他</option>
+                        <option value="Fasting">Fasting (Morning)</option>
+                        <option value="Pre-meal">Pre-meal</option>
+                        <option value="1hr Post-meal">1hr Post-meal</option>
+                        <option value="2hr Post-meal">2hr Post-meal</option>
+                        <option value="Bedtime">Bedtime</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-success w-100">💾 儲存記錄</button>
+                    <button type="submit" class="btn btn-success w-100">💾 Save</button>
                 </div>
                 <div class="col-12">
-                    <input type="text" class="form-control" id="noteInput" placeholder="備註（選填）例如：吃了甜點、運動後等">
+                    <input type="text" class="form-control" id="noteInput" placeholder="Notes (optional) e.g. had dessert, after exercise...">
                 </div>
             </form>
         </div>
@@ -675,12 +501,12 @@
     <!-- Trend Chart -->
     <div class="card" id="chartCard">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-            <span>📊 血糖趨勢圖</span>
+            <span>📊 Blood Glucose Trend Chart</span>
             <div class="period-selector no-print">
-                <button class="period-btn" onclick="changePeriod(7)">7天</button>
-                <button class="period-btn active" onclick="changePeriod(14)">14天</button>
-                <button class="period-btn" onclick="changePeriod(30)">30天</button>
-                <button class="period-btn" onclick="changePeriod(90)">90天</button>
+                <button class="period-btn" onclick="changePeriod(7)">7 Days</button>
+                <button class="period-btn active" onclick="changePeriod(14)">14 Days</button>
+                <button class="period-btn" onclick="changePeriod(30)">30 Days</button>
+                <button class="period-btn" onclick="changePeriod(90)">90 Days</button>
             </div>
         </div>
         <div class="card-body">
@@ -690,7 +516,7 @@
             
             <!-- Insights -->
             <div class="insight-box">
-                <h6 class="mb-3">💡 智能分析</h6>
+                <h6 class="mb-3">💡 Smart Analysis</h6>
                 <div id="insightsContainer"></div>
             </div>
         </div>
@@ -701,10 +527,10 @@
         <div class="col-md-6 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-info text-white">
-                    ⏰ 時段分析
+                    ⏰ Timing Analysis
                 </div>
-                <div class="card-body d-flex flex-column">
-                    <div style="flex: 1; position: relative; min-height: 300px;">
+                <div class="card-body">
+                    <div style="position: relative; height: 300px;">
                         <canvas id="timingChart"></canvas>
                     </div>
                 </div>
@@ -713,7 +539,7 @@
         <div class="col-md-6 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-warning text-dark">
-                    📈 異常記錄統計
+                    📈 Anomaly Statistics
                 </div>
                 <div class="card-body d-flex flex-column">
                     <div id="anomalyStats" style="flex: 1;"></div>
@@ -725,10 +551,10 @@
     <!-- Records Table -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>📋 歷史記錄</span>
+            <span>📋 History</span>
             <div>
-                <button class="btn btn-sm btn-primary me-2 no-print" onclick="generatePDFReport()">📄 生成PDF報表</button>
-                <button class="btn btn-sm btn-outline-danger no-print" onclick="clearAllData()">🗑️ 清除所有資料</button>
+                <button class="btn btn-sm btn-primary me-2 no-print" onclick="generatePDFReport()">📄 Generate PDF Report</button>
+                <button class="btn btn-sm btn-outline-danger no-print" onclick="clearAllData()">🗑️ Clear All Data</button>
             </div>
         </div>
         <div class="card-body">
@@ -736,14 +562,14 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>日期</th>
-                            <th>時間</th>
-                            <th>時機</th>
-                            <th>血糖值</th>
-                            <th>狀態</th>
-                            <th>趨勢</th>
-                            <th>備註</th>
-                            <th class="no-print">操作</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Timing</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                            <th>Trend</th>
+                            <th>Notes</th>
+                            <th class="no-print">Action</th>
                         </tr>
                     </thead>
                     <tbody id="recordsTable"></tbody>
@@ -761,7 +587,7 @@
             <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
         </div>
         <div class="footer-copyright">
-            Copyright © Billion Studio 2026. All rights reserved.
+            Copyright &copy; 2026 Billion Studio. All rights reserved.
         </div>
     </div>
 </footer>
@@ -770,315 +596,167 @@
 <div id="pdfReportContainer" style="position: absolute; left: -9999px; top: 0;"></div>
 
 <script>
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyA156hYpzmkKOkwfruueSAOwPsBiZdEyFg",
-        authDomain: "glucose-tracker-1ce2d.firebaseapp.com",
-        projectId: "glucose-tracker-1ce2d",
-        storageBucket: "glucose-tracker-1ce2d.firebasestorage.app",
-        messagingSenderId: "156879055080",
-        appId: "1:156879055080:web:23495e17dd2def5765c15d"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    let currentUser = null;
+    // ─── State ───────────────────────────────────────────────
     let userProfile = null;
     let records = [];
     let currentPeriod = 14;
     let trendChart = null;
     let timingChart = null;
 
-    // Auth State Observer
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            loadUserProfile();
+    // ─── Disclaimer ──────────────────────────────────────────
+    function acceptDisclaimer() {
+        localStorage.setItem('disclaimerAccepted', '1');
+        document.getElementById('disclaimerOverlay').style.display = 'none';
+        init();
+    }
+
+    // ─── Init ─────────────────────────────────────────────────
+    function init() {
+        const profileRaw = localStorage.getItem('glucoseUserProfile');
+        if (profileRaw) {
+            userProfile = JSON.parse(profileRaw);
+            showApp();
         } else {
-            showAuthContainer();
-        }
-    });
-
-    // Auth Functions
-    function switchAuthTab(tab) {
-        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-        
-        if (tab === 'login') {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-        } else {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
+            showSetup();
         }
     }
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    window.onload = function() {
+        const accepted = localStorage.getItem('disclaimerAccepted');
+        if (accepted) {
+            document.getElementById('disclaimerOverlay').style.display = 'none';
+            init();
+        }
+        // else disclaimer stays visible
+    };
+
+    // ─── Setup Form ──────────────────────────────────────────
+    document.getElementById('setupForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        
-        try {
-            await auth.signInWithEmailAndPassword(email, password);
-        } catch (error) {
-            showError('loginError', error.message);
-        }
+        userProfile = {
+            name: document.getElementById('setupName').value,
+            gender: document.getElementById('setupGender').value,
+            birthdate: document.getElementById('setupBirthdate').value
+        };
+        localStorage.setItem('glucoseUserProfile', JSON.stringify(userProfile));
+        showApp();
     });
 
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-        const name = document.getElementById('registerName').value;
-        const gender = document.getElementById('registerGender').value;
-        const birthdate = document.getElementById('registerBirthdate').value;
-        
-        try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            
-            await db.collection('users').doc(userCredential.user.uid).set({
-                name: name,
-                gender: gender,
-                birthdate: birthdate,
-                email: email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-        } catch (error) {
-            showError('registerError', error.message);
-        }
-    });
-
-    function showError(elementId, message) {
-        const errorEl = document.getElementById(elementId);
-        errorEl.textContent = message;
-        errorEl.style.display = 'block';
-        setTimeout(() => {
-            errorEl.style.display = 'none';
-        }, 5000);
-    }
-
-    // Google Sign In
-    let pendingGoogleUser = null;
-    
-    async function signInWithGoogle() {
-        try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({
-                prompt: 'select_account'
-            });
-            
-            const result = await auth.signInWithPopup(provider);
-            pendingGoogleUser = result.user;
-            
-            // Check if user profile exists
-            const userDoc = await db.collection('users').doc(pendingGoogleUser.uid).get();
-            
-            if (!userDoc.exists) {
-                // New Google user - show modal to collect additional info
-                showGoogleUserModal();
-            } else {
-                // Existing user - load profile
-                currentUser = pendingGoogleUser;
-                await loadUserProfile();
-            }
-            
-        } catch (error) {
-            console.error('Google sign in error:', error);
-            if (error.code !== 'auth/popup-closed-by-user') {
-                showError('loginError', 'Google 登入失敗：' + error.message);
-            }
-        }
-    }
-    
-    function showGoogleUserModal() {
-        const modal = document.getElementById('googleUserModal');
-        document.getElementById('googleName').value = pendingGoogleUser.displayName || '';
-        
-        // Set max date for birthdate (today)
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('googleBirthdate').setAttribute('max', today);
-        
-        modal.classList.add('show');
-    }
-    
-    function hideGoogleUserModal() {
-        const modal = document.getElementById('googleUserModal');
-        modal.classList.remove('show');
-        document.getElementById('googleUserForm').reset();
-    }
-    
-    // Handle Google User Form submission
-    document.getElementById('googleUserForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const name = document.getElementById('googleName').value;
-        const gender = document.getElementById('googleGender').value;
-        const birthdate = document.getElementById('googleBirthdate').value;
-        
-        // 驗證必填欄位
-        if (!name || !gender || !birthdate) {
-            alert('請填寫所有必填欄位');
-            return;
-        }
-        
-        try {
-            // 禁用按鈕防止重複提交
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = '處理中...';
-            
-            await db.collection('users').doc(pendingGoogleUser.uid).set({
-                name: name,
-                gender: gender,
-                birthdate: birthdate,
-                email: pendingGoogleUser.email,
-                photoURL: pendingGoogleUser.photoURL,
-                provider: 'google',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            hideGoogleUserModal();
-            currentUser = pendingGoogleUser;
-            await loadUserProfile();
-            
-        } catch (error) {
-            console.error('Error creating user profile:', error);
-            alert('建立個人資料失敗：' + error.message + '\n請檢查網絡連接後再試');
-            
-            // 重新啟用按鈕
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = false;
-            submitBtn.textContent = '完成';
-        }
-    });
-
-    async function loadUserProfile() {
-        try {
-            const doc = await db.collection('users').doc(currentUser.uid).get();
-            if (doc.exists) {
-                userProfile = doc.data();
-                showAppContainer();
-                loadRecords();
-            }
-        } catch (error) {
-            console.error('Error loading profile:', error);
-        }
-    }
-
-    function showAuthContainer() {
-        document.getElementById('auth-wrapper').style.display = 'flex';
+    function showSetup() {
+        document.getElementById('setup-wrapper').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
     }
 
-    function showAppContainer() {
-        document.getElementById('auth-wrapper').style.display = 'none';
+    function showApp() {
+        document.getElementById('setup-wrapper').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
-        
+
         document.getElementById('userName').textContent = userProfile.name;
         document.getElementById('userGender').textContent = userProfile.gender;
-        
+
         const birthDate = new Date(userProfile.birthdate);
         const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
         document.getElementById('userAge').textContent = age;
-        
+
         const now = new Date();
         document.getElementById('dateInput').valueAsDate = now;
         document.getElementById('timeInput').value = now.toTimeString().substring(0, 5);
+
+        loadRecords();
     }
 
-    async function logout() {
-        try {
-            await auth.signOut();
-        } catch (error) {
-            console.error('Error logging out:', error);
+    function resetProfile() {
+        if (confirm('This will clear your profile. Your glucose records will remain. Continue?')) {
+            localStorage.removeItem('glucoseUserProfile');
+            userProfile = null;
+            showSetup();
         }
     }
 
-    async function loadRecords() {
-        try {
-            const snapshot = await db.collection('glucoseRecords')
-                .where('userId', '==', currentUser.uid)
-                .orderBy('timestamp', 'desc')
-                .get();
-            
-            records = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
-            renderAll();
-        } catch (error) {
-            console.error('Error loading records:', error);
-        }
+    // ─── Migrate old Chinese timing labels to English ─────────
+    const chineseTimingMap = {
+        '空腹': 'Fasting',
+        '餐前': 'Pre-meal',
+        '餐後1小時': '1hr Post-meal',
+        '餐後2小時': '2hr Post-meal',
+        '睡前': 'Bedtime',
+        '其他': 'Other'
+    };
+
+    function migrateRecords(recs) {
+        let changed = false;
+        recs.forEach(r => {
+            if (chineseTimingMap[r.timing]) {
+                r.timing = chineseTimingMap[r.timing];
+                changed = true;
+            }
+        });
+        if (changed) localStorage.setItem('glucoseRecords', JSON.stringify(recs));
+        return recs;
     }
 
-    document.getElementById('glucoseForm').addEventListener('submit', async (e) => {
+    // ─── Records (localStorage) ───────────────────────────────
+    function loadRecords() {
+        const raw = localStorage.getItem('glucoseRecords');
+        records = raw ? migrateRecords(JSON.parse(raw)) : [];
+        renderAll();
+    }
+
+    function saveRecords() {
+        localStorage.setItem('glucoseRecords', JSON.stringify(records));
+    }
+
+    document.getElementById('glucoseForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
+        const dateVal = document.getElementById('dateInput').value;
+        const timeVal = document.getElementById('timeInput').value;
         const record = {
-            userId: currentUser.uid,
-            date: document.getElementById('dateInput').value,
-            time: document.getElementById('timeInput').value,
+            id: Date.now().toString(),
+            date: dateVal,
+            time: timeVal,
             value: parseInt(document.getElementById('valueInput').value),
             timing: document.getElementById('timingInput').value,
             note: document.getElementById('noteInput').value,
-            timestamp: firebase.firestore.Timestamp.fromDate(new Date(
-                document.getElementById('dateInput').value + ' ' + document.getElementById('timeInput').value
-            ))
+            timestamp: new Date(dateVal + 'T' + timeVal).getTime()
         };
 
-        try {
-            await db.collection('glucoseRecords').add(record);
-            await loadRecords();
-            
-            document.getElementById('glucoseForm').reset();
-            const current = new Date();
-            document.getElementById('dateInput').valueAsDate = current;
-            document.getElementById('timeInput').value = current.toTimeString().substring(0, 5);
-        } catch (error) {
-            console.error('Error adding record:', error);
-            alert('儲存失敗，請稍後再試');
-        }
+        records.unshift(record);
+        records.sort((a, b) => b.timestamp - a.timestamp);
+        saveRecords();
+        renderAll();
+
+        document.getElementById('glucoseForm').reset();
+        const current = new Date();
+        document.getElementById('dateInput').valueAsDate = current;
+        document.getElementById('timeInput').value = current.toTimeString().substring(0, 5);
     });
 
-    async function deleteRecord(id) {
-        if (confirm('確定要刪除這筆記錄嗎？')) {
-            try {
-                await db.collection('glucoseRecords').doc(id).delete();
-                await loadRecords();
-            } catch (error) {
-                console.error('Error deleting record:', error);
+    function deleteRecord(id) {
+        if (confirm('Delete this record?')) {
+            records = records.filter(r => r.id !== id);
+            saveRecords();
+            renderAll();
+        }
+    }
+
+    function clearAllData() {
+        if (confirm('WARNING: This will permanently delete all glucose records. Are you sure?')) {
+            if (confirm('Please confirm again: delete all records?')) {
+                records = [];
+                saveRecords();
+                renderAll();
+                alert('All data has been cleared.');
             }
         }
     }
 
-    async function clearAllData() {
-        if (confirm('警告：這將刪除所有資料且無法復原！確定嗎？')) {
-            if (confirm('請再次確認：真的要清除所有血糖記錄嗎？')) {
-                try {
-                    const batch = db.batch();
-                    const snapshot = await db.collection('glucoseRecords')
-                        .where('userId', '==', currentUser.uid)
-                        .get();
-                    
-                    snapshot.docs.forEach(doc => {
-                        batch.delete(doc.ref);
-                    });
-                    
-                    await batch.commit();
-                    await loadRecords();
-                    alert('已清除所有資料');
-                } catch (error) {
-                    console.error('Error clearing data:', error);
-                }
-            }
-        }
+    // ─── Helpers ──────────────────────────────────────────────
+    function getTimestamp(r) {
+        return r.timestamp ? new Date(r.timestamp) : new Date(r.date + 'T' + r.time);
     }
 
+    // ─── Render ───────────────────────────────────────────────
     function renderAll() {
         renderTrendAlert();
         renderQuickStats();
@@ -1097,40 +775,36 @@
 
         const recent = records.slice(0, 5);
         const trend = calculateTrend(recent);
-        
+
         let alertHtml = '';
-        
+
         if (trend.direction === 'rising' && trend.avgChange > 10) {
             alertHtml = `
                 <div class="alert-box alert-danger-custom">
-                    <strong>⚠️ 注意：血糖上升趨勢</strong><br>
-                    過去${recent.length}次測量平均上升 ${trend.avgChange.toFixed(1)} mg/dL，建議留意飲食和運動
-                </div>
-            `;
+                    <strong>⚠️ Alert: Rising Glucose Trend</strong><br>
+                    Average rise of ${trend.avgChange.toFixed(1)} mg/dL over last ${recent.length} readings. Consider reviewing diet and exercise.
+                </div>`;
         } else if (trend.direction === 'falling' && Math.abs(trend.avgChange) > 10) {
             alertHtml = `
                 <div class="alert-box alert-warning-custom">
-                    <strong>📉 血糖下降趨勢</strong><br>
-                    過去${recent.length}次測量平均下降 ${Math.abs(trend.avgChange).toFixed(1)} mg/dL
-                </div>
-            `;
+                    <strong>📉 Falling Glucose Trend</strong><br>
+                    Average drop of ${Math.abs(trend.avgChange).toFixed(1)} mg/dL over last ${recent.length} readings.
+                </div>`;
         } else if (trend.direction === 'stable') {
             alertHtml = `
                 <div class="alert-box alert-success-custom">
-                    <strong>✅ 血糖穩定</strong><br>
-                    過去${recent.length}次測量波動在正常範圍內
-                </div>
-            `;
+                    <strong>✅ Glucose Stable</strong><br>
+                    Fluctuations in the last ${recent.length} readings are within normal range.
+                </div>`;
         }
 
         const consecutiveHighs = recent.filter(r => r.value > 140).length;
         if (consecutiveHighs >= 3) {
             alertHtml += `
                 <div class="alert-box alert-danger-custom">
-                    <strong>🔴 持續偏高警告</strong><br>
-                    最近${consecutiveHighs}次測量都超過140 mg/dL，建議諮詢醫師
-                </div>
-            `;
+                    <strong>🔴 Persistent High Alert</strong><br>
+                    ${consecutiveHighs} of the last ${recent.length} readings exceeded 140 mg/dL. Please consult your doctor.
+                </div>`;
         }
 
         document.getElementById('trendAlertSection').innerHTML = alertHtml;
@@ -1147,45 +821,37 @@
 
         const recent5 = records.slice(0, 5);
         const trend = calculateTrend(recent5);
-        
-        let trendIcon = '';
-        let trendClass = '';
-        if (trend.direction === 'rising') {
-            trendIcon = '📈';
-            trendClass = 'text-danger';
-        } else if (trend.direction === 'falling') {
-            trendIcon = '📉';
-            trendClass = 'text-success';
-        } else {
-            trendIcon = '➡️';
-            trendClass = 'text-info';
-        }
-        
+
+        let trendIcon = '', trendClass = '';
+        if (trend.direction === 'rising') { trendIcon = '📈'; trendClass = 'text-danger'; }
+        else if (trend.direction === 'falling') { trendIcon = '📉'; trendClass = 'text-success'; }
+        else { trendIcon = '➡️'; trendClass = 'text-info'; }
+
         document.getElementById('currentTrend').innerHTML = `<span class="${trendClass}">${trendIcon}</span>`;
         document.getElementById('trendChange').innerHTML = `<span class="${trendClass}">${trend.description}</span>`;
 
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const last7days = records.filter(r => r.timestamp.toDate() >= sevenDaysAgo);
-        
+        const last7days = records.filter(r => getTimestamp(r) >= sevenDaysAgo);
+
         if (last7days.length > 0) {
             const avg7 = last7days.reduce((sum, r) => sum + r.value, 0) / last7days.length;
             document.getElementById('avg7days').textContent = avg7.toFixed(0);
-            
+
             const fourteenDaysAgo = new Date();
             fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
             const prev7days = records.filter(r => {
-                const date = r.timestamp.toDate();
-                return date >= fourteenDaysAgo && date < sevenDaysAgo;
+                const d = getTimestamp(r);
+                return d >= fourteenDaysAgo && d < sevenDaysAgo;
             });
-            
+
             if (prev7days.length > 0) {
                 const prevAvg = prev7days.reduce((sum, r) => sum + r.value, 0) / prev7days.length;
                 const change = avg7 - prevAvg;
                 const changeIcon = change > 0 ? '↑' : '↓';
                 const changeClass = change > 0 ? 'text-danger' : 'text-success';
-                document.getElementById('avg7daysChange').innerHTML = 
-                    `<span class="${changeClass}">${changeIcon} ${Math.abs(change).toFixed(1)}</span> vs 上週`;
+                document.getElementById('avg7daysChange').innerHTML =
+                    `<span class="${changeClass}">${changeIcon} ${Math.abs(change).toFixed(1)}</span> vs last week`;
             }
         } else {
             document.getElementById('avg7days').textContent = '-';
@@ -1194,32 +860,30 @@
         const maxRecord = records.reduce((max, r) => r.value > max.value ? r : max, records[0]);
         document.getElementById('maxValue').textContent = maxRecord.value;
         document.getElementById('maxDate').textContent = maxRecord.date;
-
         document.getElementById('totalRecords').textContent = records.length;
     }
 
     function calculateTrend(data) {
-        if (data.length < 2) return { direction: 'stable', avgChange: 0, description: '資料不足' };
-        
+        if (data.length < 2) return { direction: 'stable', avgChange: 0, description: 'Insufficient data' };
+
         let totalChange = 0;
         for (let i = 0; i < data.length - 1; i++) {
             totalChange += data[i].value - data[i + 1].value;
         }
-        
         const avgChange = totalChange / (data.length - 1);
-        
+
         let direction, description;
         if (avgChange > 5) {
             direction = 'rising';
-            description = `平均上升 ${avgChange.toFixed(1)} mg/dL`;
+            description = `Avg. rise: ${avgChange.toFixed(1)} mg/dL`;
         } else if (avgChange < -5) {
             direction = 'falling';
-            description = `平均下降 ${Math.abs(avgChange).toFixed(1)} mg/dL`;
+            description = `Avg. drop: ${Math.abs(avgChange).toFixed(1)} mg/dL`;
         } else {
             direction = 'stable';
-            description = '穩定';
+            description = 'Stable';
         }
-        
+
         return { direction, avgChange, description };
     }
 
@@ -1234,10 +898,10 @@
     function renderTrendChart() {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - currentPeriod);
-        
+
         const periodData = records
-            .filter(r => r.timestamp.toDate() >= cutoffDate)
-            .sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+            .filter(r => getTimestamp(r) >= cutoffDate)
+            .sort((a, b) => getTimestamp(a) - getTimestamp(b));
 
         const labels = periodData.map(r => `${r.date.slice(5)} ${r.time.slice(0, 5)}`);
         const values = periodData.map(r => r.value);
@@ -1248,15 +912,14 @@
         });
 
         const ctx = document.getElementById('trendChart').getContext('2d');
-        
         if (trendChart) trendChart.destroy();
-        
+
         trendChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    label: '血糖值 (mg/dL)',
+                    label: 'Glucose (mg/dL)',
                     data: values,
                     borderColor: '#667eea',
                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -1265,17 +928,15 @@
                     pointHoverRadius: 8,
                     fill: true,
                     tension: 0.4
-                },
-                {
-                    label: '正常上限 (140)',
+                }, {
+                    label: 'Upper Limit (140)',
                     data: Array(labels.length).fill(140),
                     borderColor: 'rgba(220, 53, 69, 0.5)',
                     borderDash: [5, 5],
                     pointRadius: 0,
                     fill: false
-                },
-                {
-                    label: '正常下限 (70)',
+                }, {
+                    label: 'Lower Limit (70)',
                     data: Array(labels.length).fill(70),
                     borderColor: 'rgba(255, 193, 7, 0.5)',
                     borderDash: [5, 5],
@@ -1287,28 +948,27 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
+                    legend: { display: true, position: 'top' },
                     tooltip: {
                         callbacks: {
                             afterLabel: function(context) {
                                 const record = periodData[context.dataIndex];
-                                return `時機: ${record.timing}${record.note ? '\n備註: ' + record.note : ''}`;
+                                const lines = [];
+                                if (record.timing) lines.push(`Timing: ${record.timing}`);
+                                if (record.note) lines.push(`Note: ${record.note}`);
+                                if (record.value > 180) lines.push('⚠️ High');
+                                else if (record.value < 70) lines.push('⚠️ Low');
+                                else lines.push('✅ Normal');
+                                return lines;
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: false,
-                        suggestedMin: 50,
-                        suggestedMax: 200,
-                        title: {
-                            display: true,
-                            text: 'mg/dL'
-                        }
+                        min: 50,
+                        max: 300,
+                        title: { display: true, text: 'mg/dL' }
                     }
                 }
             }
@@ -1316,52 +976,38 @@
     }
 
     function renderTimingChart() {
-        const timingGroups = {};
+        const timingMap = {};
         records.forEach(r => {
-            if (!timingGroups[r.timing]) timingGroups[r.timing] = [];
-            timingGroups[r.timing].push(r.value);
+            if (!timingMap[r.timing]) timingMap[r.timing] = { total: 0, count: 0 };
+            timingMap[r.timing].total += r.value;
+            timingMap[r.timing].count++;
         });
 
-        const labels = Object.keys(timingGroups);
-        const averages = labels.map(timing => {
-            const values = timingGroups[timing];
-            return (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
-        });
+        const labels = Object.keys(timingMap);
+        const avgs = labels.map(t => (timingMap[t].total / timingMap[t].count).toFixed(1));
 
         const ctx = document.getElementById('timingChart').getContext('2d');
-        
         if (timingChart) timingChart.destroy();
-        
+
         timingChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    label: '平均血糖值',
-                    data: averages,
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.7)',
-                        'rgba(118, 75, 162, 0.7)',
-                        'rgba(220, 53, 69, 0.7)',
-                        'rgba(255, 193, 7, 0.7)',
-                        'rgba(25, 135, 84, 0.7)',
-                        'rgba(13, 202, 240, 0.7)'
-                    ]
+                    label: 'Avg Glucose (mg/dL)',
+                    data: avgs,
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                    borderColor: '#667eea',
+                    borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1.5,
-                plugins: {
-                    legend: { display: false }
-                },
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: false,
-                        suggestedMin: 50,
-                        title: { display: true, text: 'mg/dL' }
-                    }
+                    y: { min: 60, title: { display: true, text: 'mg/dL' } },
+                    x: { ticks: { maxRotation: 30, minRotation: 0 } }
                 }
             }
         });
@@ -1371,119 +1017,88 @@
         const highCount = records.filter(r => r.value > 180).length;
         const lowCount = records.filter(r => r.value < 70).length;
         const normalCount = records.filter(r => r.value >= 70 && r.value <= 180).length;
-        
         const total = records.length || 1;
-        
+
         document.getElementById('anomalyStats').innerHTML = `
             <div class="d-flex flex-column h-100 justify-content-around">
                 <div class="mb-2">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span style="font-size: 1.1rem;">🔴 偏高 (>180)</span>
-                        <strong class="text-danger" style="font-size: 1.2rem;">${highCount} 次 (${(highCount/total*100).toFixed(1)}%)</strong>
+                        <span style="font-size:1.1rem;">🔴 High (&gt;180)</span>
+                        <strong class="text-danger" style="font-size:1.2rem;">${highCount} (${(highCount/total*100).toFixed(1)}%)</strong>
                     </div>
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-danger" style="width: ${highCount/total*100}%"></div>
-                    </div>
-                </div>
-                <div class="mb-2">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span style="font-size: 1.1rem;">🟢 正常 (70-180)</span>
-                        <strong class="text-success" style="font-size: 1.2rem;">${normalCount} 次 (${(normalCount/total*100).toFixed(1)}%)</strong>
-                    </div>
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-success" style="width: ${normalCount/total*100}%"></div>
+                    <div class="progress" style="height:30px;">
+                        <div class="progress-bar bg-danger" style="width:${highCount/total*100}%"></div>
                     </div>
                 </div>
                 <div class="mb-2">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span style="font-size: 1.1rem;">🟡 偏低 (<70)</span>
-                        <strong class="text-warning" style="font-size: 1.2rem;">${lowCount} 次 (${(lowCount/total*100).toFixed(1)}%)</strong>
+                        <span style="font-size:1.1rem;">🟢 Normal (70–180)</span>
+                        <strong class="text-success" style="font-size:1.2rem;">${normalCount} (${(normalCount/total*100).toFixed(1)}%)</strong>
                     </div>
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-warning" style="width: ${lowCount/total*100}%"></div>
+                    <div class="progress" style="height:30px;">
+                        <div class="progress-bar bg-success" style="width:${normalCount/total*100}%"></div>
                     </div>
                 </div>
-            </div>
-        `;
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:1.1rem;">🟡 Low (&lt;70)</span>
+                        <strong class="text-warning" style="font-size:1.2rem;">${lowCount} (${(lowCount/total*100).toFixed(1)}%)</strong>
+                    </div>
+                    <div class="progress" style="height:30px;">
+                        <div class="progress-bar bg-warning" style="width:${lowCount/total*100}%"></div>
+                    </div>
+                </div>
+            </div>`;
     }
 
     function renderInsights() {
         if (records.length < 5) {
-            document.getElementById('insightsContainer').innerHTML = 
-                '<p class="text-muted">記錄不足，需要至少5筆記錄才能進行分析</p>';
+            document.getElementById('insightsContainer').innerHTML =
+                '<p class="text-muted">Not enough data — at least 5 records are needed for analysis.</p>';
             return;
         }
 
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - currentPeriod);
-        const periodData = records.filter(r => r.timestamp.toDate() >= cutoffDate);
+        const periodData = records.filter(r => getTimestamp(r) >= cutoffDate);
 
         const insights = [];
-        
+
         const trend = calculateTrend(periodData.slice(0, Math.min(10, periodData.length)));
         if (trend.direction === 'rising' && trend.avgChange > 10) {
-            insights.push({
-                icon: '📈',
-                text: `血糖呈現上升趨勢，${trend.description}`,
-                type: 'warning'
-            });
+            insights.push({ icon: '📈', text: `Glucose is trending upward — ${trend.description}`, type: 'warning' });
         } else if (trend.direction === 'stable') {
-            insights.push({
-                icon: '✅',
-                text: '血糖控制穩定，請繼續保持',
-                type: 'success'
-            });
+            insights.push({ icon: '✅', text: 'Glucose is well-controlled. Keep it up!', type: 'success' });
         }
 
-        const morningRecords = periodData.filter(r => r.timing === '空腹');
+        const morningRecords = periodData.filter(r => r.timing === 'Fasting');
         if (morningRecords.length >= 3) {
             const morningAvg = morningRecords.reduce((s, r) => s + r.value, 0) / morningRecords.length;
             if (morningAvg > 130) {
-                insights.push({
-                    icon: '🌅',
-                    text: `空腹血糖平均 ${morningAvg.toFixed(0)} mg/dL，建議注意晚餐攝取`,
-                    type: 'info'
-                });
+                insights.push({ icon: '🌅', text: `Fasting average is ${morningAvg.toFixed(0)} mg/dL. Consider reviewing your evening meal.`, type: 'info' });
             }
         }
 
         const values = periodData.map(r => r.value);
-        const max = Math.max(...values);
-        const min = Math.min(...values);
-        const range = max - min;
-        
-        if (range > 100) {
-            insights.push({
-                icon: '⚡',
-                text: `血糖波動較大（${min}-${max}），建議規律飲食`,
-                type: 'warning'
-            });
+        const max = Math.max(...values), min = Math.min(...values);
+        if (max - min > 100) {
+            insights.push({ icon: '⚡', text: `Large glucose variability (${min}–${max} mg/dL). Try to maintain regular eating habits.`, type: 'warning' });
         }
 
         const recent3 = periodData.slice(0, 3);
-        const recentHighs = recent3.filter(r => r.value > 180).length;
-        if (recentHighs >= 2) {
-            insights.push({
-                icon: '⚠️',
-                text: '近期多次偏高，建議諮詢醫師調整用藥',
-                type: 'danger'
-            });
+        if (recent3.filter(r => r.value > 180).length >= 2) {
+            insights.push({ icon: '⚠️', text: 'Multiple recent high readings. Please consult your doctor about medication adjustment.', type: 'danger' });
         }
 
         let html = '';
         insights.forEach(insight => {
-            const colorClass = insight.type === 'success' ? 'text-success' : 
-                              insight.type === 'warning' ? 'text-warning' :
-                              insight.type === 'danger' ? 'text-danger' : 'text-info';
-            html += `
-                <div class="insight-item">
-                    <span class="insight-icon">${insight.icon}</span>
-                    <span class="${colorClass}">${insight.text}</span>
-                </div>
-            `;
+            const colorClass = insight.type === 'success' ? 'text-success' :
+                               insight.type === 'warning' ? 'text-warning' :
+                               insight.type === 'danger' ? 'text-danger' : 'text-info';
+            html += `<div class="insight-item"><span>${insight.icon}</span><span class="${colorClass}">${insight.text}</span></div>`;
         });
 
-        document.getElementById('insightsContainer').innerHTML = html || '<p class="text-muted">目前沒有特別的發現</p>';
+        document.getElementById('insightsContainer').innerHTML = html || '<p class="text-muted">No notable findings at this time.</p>';
     }
 
     function renderRecordsTable() {
@@ -1491,33 +1106,22 @@
         tbody.innerHTML = '';
 
         records.forEach((r, index) => {
-            let statusBadge = '';
-            let statusText = '';
-            let statusClass = '';
-            
+            let statusBadge = '', statusText = '', statusClass = '';
+
             if (r.value > 180) {
-                statusBadge = 'badge-high';
-                statusText = '偏高';
-                statusClass = 'table-danger';
+                statusBadge = 'badge-high'; statusText = 'High'; statusClass = 'table-danger';
             } else if (r.value < 70) {
-                statusBadge = 'badge-low';
-                statusText = '偏低';
-                statusClass = 'table-warning';
+                statusBadge = 'badge-low'; statusText = 'Low'; statusClass = 'table-warning';
             } else {
-                statusBadge = 'badge-normal';
-                statusText = '正常';
+                statusBadge = 'badge-normal'; statusText = 'Normal';
             }
 
             let trendArrow = '';
             if (index < records.length - 1) {
                 const diff = r.value - records[index + 1].value;
-                if (diff > 5) {
-                    trendArrow = '<span class="trend-arrow text-danger">↑</span>';
-                } else if (diff < -5) {
-                    trendArrow = '<span class="trend-arrow text-success">↓</span>';
-                } else {
-                    trendArrow = '<span class="trend-arrow text-secondary">→</span>';
-                }
+                if (diff > 5) trendArrow = '<span class="text-danger">↑</span>';
+                else if (diff < -5) trendArrow = '<span class="text-success">↓</span>';
+                else trendArrow = '<span class="text-secondary">→</span>';
             }
 
             tbody.innerHTML += `
@@ -1530,32 +1134,25 @@
                     <td>${trendArrow}</td>
                     <td>${r.note || '-'}</td>
                     <td class="no-print">
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${r.id}')">
-                            ✕
-                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${r.id}')">✕</button>
                     </td>
-                </tr>
-            `;
+                </tr>`;
         });
     }
 
-    // PDF Report Generation using html2canvas
+    // ─── PDF Report ───────────────────────────────────────────
     async function generatePDFReport() {
-        if (records.length === 0) {
-            alert('沒有記錄可以生成報表');
-            return;
-        }
+        if (records.length === 0) { alert('No records to generate a report.'); return; }
 
-        // Show loading
-        const originalText = event.target.textContent;
-        event.target.textContent = '生成中...';
-        event.target.disabled = true;
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Generating...';
+        btn.disabled = true;
 
         try {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            // Calculate statistics
+
             const totalRecords = records.length;
             const avgValue = (records.reduce((s, r) => s + r.value, 0) / totalRecords).toFixed(1);
             const maxValue = Math.max(...records.map(r => r.value));
@@ -1563,172 +1160,130 @@
             const highCount = records.filter(r => r.value > 180).length;
             const lowCount = records.filter(r => r.value < 70).length;
             const normalCount = records.filter(r => r.value >= 70 && r.value <= 180).length;
-            
+
             const birthDate = new Date(userProfile.birthdate);
             const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-            const today = new Date().toLocaleDateString('zh-TW');
-            
-            // Create PDF report HTML
+            const today = new Date().toLocaleDateString('en-GB');
+
             const reportHtml = `
-                <div class="pdf-report" style="width: 210mm; padding: 20mm; background: white; font-family: Arial, sans-serif;">
-                    <div class="pdf-header" style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #667eea; padding-bottom: 20px;">
-                        <h1 style="color: #667eea; margin-bottom: 10px;">🩸 血糖監測報表</h1>
-                        <div style="font-size: 14px; color: #6c757d;">
-                            姓名：${userProfile.name} | 性別：${userProfile.gender} | 年齡：${age}歲 | 報表日期：${today}
+                <div class="pdf-report" style="width:210mm;padding:20mm;background:white;font-family:Arial,sans-serif;">
+                    <div style="text-align:center;margin-bottom:30px;border-bottom:3px solid #667eea;padding-bottom:20px;">
+                        <h1 style="color:#667eea;margin-bottom:10px;">🩸 Blood Glucose Report</h1>
+                        <div style="font-size:14px;color:#6c757d;">
+                            Name: ${userProfile.name} | Gender: ${userProfile.gender} | Age: ${age} | Date: ${today}
                         </div>
                     </div>
-                    
-                    <div class="pdf-section">
-                        <div class="pdf-section-title" style="background: #f8f9fa; padding: 10px 15px; border-left: 4px solid #667eea; font-weight: bold; margin-bottom: 15px;">
-                            統計摘要
-                        </div>
-                        <div class="pdf-stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
-                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
-                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">總記錄數</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #667eea;">${totalRecords}</div>
+                    <div style="margin-bottom:30px;">
+                        <div style="background:#f8f9fa;padding:10px 15px;border-left:4px solid #667eea;font-weight:bold;margin-bottom:15px;">Summary Statistics</div>
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;">
+                            <div style="border:1px solid #dee2e6;padding:15px;text-align:center;border-radius:8px;">
+                                <div style="color:#6c757d;font-size:12px;margin-bottom:5px;">Total Records</div>
+                                <div style="font-size:24px;font-weight:bold;color:#667eea;">${totalRecords}</div>
                             </div>
-                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
-                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">平均血糖</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #667eea;">${avgValue}</div>
+                            <div style="border:1px solid #dee2e6;padding:15px;text-align:center;border-radius:8px;">
+                                <div style="color:#6c757d;font-size:12px;margin-bottom:5px;">Average</div>
+                                <div style="font-size:24px;font-weight:bold;color:#667eea;">${avgValue}</div>
                             </div>
-                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
-                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">最高值</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #dc3545;">${maxValue}</div>
+                            <div style="border:1px solid #dee2e6;padding:15px;text-align:center;border-radius:8px;">
+                                <div style="color:#6c757d;font-size:12px;margin-bottom:5px;">Maximum</div>
+                                <div style="font-size:24px;font-weight:bold;color:#dc3545;">${maxValue}</div>
                             </div>
-                            <div class="pdf-stat-box" style="border: 1px solid #dee2e6; padding: 15px; text-align: center; border-radius: 8px;">
-                                <div style="color: #6c757d; font-size: 12px; margin-bottom: 5px;">最低值</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${minValue}</div>
+                            <div style="border:1px solid #dee2e6;padding:15px;text-align:center;border-radius:8px;">
+                                <div style="color:#6c757d;font-size:12px;margin-bottom:5px;">Minimum</div>
+                                <div style="font-size:24px;font-weight:bold;color:#ffc107;">${minValue}</div>
                             </div>
                         </div>
-                        
-                        <div class="pdf-anomaly-bars" style="display: flex; gap: 10px; margin-top: 15px;">
-                            <div class="pdf-anomaly-bar high" style="flex: 1; padding: 15px; text-align: center; border-radius: 8px; background: #ffe5e5; color: #dc3545;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">偏高 (&gt;180)</div>
-                                <div style="font-size: 20px;">${highCount} 次 (${(highCount/totalRecords*100).toFixed(1)}%)</div>
+                        <div style="display:flex;gap:10px;margin-top:15px;">
+                            <div style="flex:1;padding:15px;text-align:center;border-radius:8px;background:#ffe5e5;color:#dc3545;">
+                                <div style="font-weight:bold;margin-bottom:5px;">High (&gt;180)</div>
+                                <div style="font-size:20px;">${highCount} (${(highCount/totalRecords*100).toFixed(1)}%)</div>
                             </div>
-                            <div class="pdf-anomaly-bar normal" style="flex: 1; padding: 15px; text-align: center; border-radius: 8px; background: #e8f5e9; color: #198754;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">正常 (70-180)</div>
-                                <div style="font-size: 20px;">${normalCount} 次 (${(normalCount/totalRecords*100).toFixed(1)}%)</div>
+                            <div style="flex:1;padding:15px;text-align:center;border-radius:8px;background:#e8f5e9;color:#198754;">
+                                <div style="font-weight:bold;margin-bottom:5px;">Normal (70–180)</div>
+                                <div style="font-size:20px;">${normalCount} (${(normalCount/totalRecords*100).toFixed(1)}%)</div>
                             </div>
-                            <div class="pdf-anomaly-bar low" style="flex: 1; padding: 15px; text-align: center; border-radius: 8px; background: #fff8e1; color: #ff8f00;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">偏低 (&lt;70)</div>
-                                <div style="font-size: 20px;">${lowCount} 次 (${(lowCount/totalRecords*100).toFixed(1)}%)</div>
+                            <div style="flex:1;padding:15px;text-align:center;border-radius:8px;background:#fff8e1;color:#ff8f00;">
+                                <div style="font-weight:bold;margin-bottom:5px;">Low (&lt;70)</div>
+                                <div style="font-size:20px;">${lowCount} (${(lowCount/totalRecords*100).toFixed(1)}%)</div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="pdf-section" style="margin-top: 30px;">
-                        <div class="pdf-section-title" style="background: #f8f9fa; padding: 10px 15px; border-left: 4px solid #667eea; font-weight: bold; margin-bottom: 15px;">
-                            血糖趨勢圖
-                        </div>
+                    <div>
+                        <div style="background:#f8f9fa;padding:10px 15px;border-left:4px solid #667eea;font-weight:bold;margin-bottom:15px;">Trend Chart</div>
                         <div id="chartImageContainer"></div>
                     </div>
-                </div>
-            `;
-            
-            // Insert report HTML into hidden container
+                </div>`;
+
             const container = document.getElementById('pdfReportContainer');
             container.innerHTML = reportHtml;
-            
-            // Capture chart image
+
             const chartCanvas = document.getElementById('trendChart');
             const chartImage = chartCanvas.toDataURL('image/png');
-            
-            // Add chart to report
-            const chartContainer = container.querySelector('#chartImageContainer');
-            chartContainer.innerHTML = `<img src="${chartImage}" style="width: 100%; height: auto;">`;
-            
-            // Generate PDF from HTML using html2canvas
-            const reportElement = container.querySelector('.pdf-report');
-            const canvas = await html2canvas(reportElement, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
-            
+            container.querySelector('#chartImageContainer').innerHTML =
+                `<img src="${chartImage}" style="width:100%;height:auto;">`;
+
+            const reportEl = container.querySelector('.pdf-report');
+            const canvas = await html2canvas(reportEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const imgData = canvas.toDataURL('image/png');
             const imgWidth = 210;
             const imgHeight = canvas.height * imgWidth / canvas.width;
-            
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            
-            // Add records table on new page
+
             pdf.addPage();
-            
             const tableHtml = `
-                <div class="pdf-report" style="width: 210mm; padding: 20mm; background: white; font-family: Arial, sans-serif;">
-                    <div class="pdf-section-title" style="background: #f8f9fa; padding: 10px 15px; border-left: 4px solid #667eea; font-weight: bold; margin-bottom: 15px;">
-                        血糖記錄明細（最近50筆）
+                <div class="pdf-report" style="width:210mm;padding:20mm;background:white;font-family:Arial,sans-serif;">
+                    <div style="background:#f8f9fa;padding:10px 15px;border-left:4px solid #667eea;font-weight:bold;margin-bottom:15px;">
+                        Detailed Records (Latest 50)
                     </div>
-                    <table class="pdf-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:11px;">
                         <thead>
                             <tr>
-                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">日期</th>
-                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">時間</th>
-                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">時機</th>
-                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">血糖值</th>
-                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">狀態</th>
-                                <th style="background: #f8f9fa; padding: 8px; border: 1px solid #dee2e6;">備註</th>
+                                <th style="background:#f8f9fa;padding:8px;border:1px solid #dee2e6;">Date</th>
+                                <th style="background:#f8f9fa;padding:8px;border:1px solid #dee2e6;">Time</th>
+                                <th style="background:#f8f9fa;padding:8px;border:1px solid #dee2e6;">Timing</th>
+                                <th style="background:#f8f9fa;padding:8px;border:1px solid #dee2e6;">Value</th>
+                                <th style="background:#f8f9fa;padding:8px;border:1px solid #dee2e6;">Status</th>
+                                <th style="background:#f8f9fa;padding:8px;border:1px solid #dee2e6;">Notes</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${records.slice(0, 50).map(r => {
-                                let statusText = '正常';
-                                let rowClass = '';
-                                
-                                if (r.value > 180) {
-                                    statusText = '偏高';
-                                    rowClass = 'background: #ffe5e5;';
-                                } else if (r.value < 70) {
-                                    statusText = '偏低';
-                                    rowClass = 'background: #fff8e1;';
-                                }
-                                
-                                return `
-                                    <tr style="${rowClass}">
-                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.date}</td>
-                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.time}</td>
-                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.timing}</td>
-                                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold;">${r.value} mg/dL</td>
-                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${statusText}</td>
-                                        <td style="padding: 8px; border: 1px solid #dee2e6;">${r.note || '-'}</td>
-                                    </tr>
-                                `;
+                                let statusText = 'Normal', rowStyle = '';
+                                if (r.value > 180) { statusText = 'High'; rowStyle = 'background:#ffe5e5;'; }
+                                else if (r.value < 70) { statusText = 'Low'; rowStyle = 'background:#fff8e1;'; }
+                                return `<tr style="${rowStyle}">
+                                    <td style="padding:8px;border:1px solid #dee2e6;">${r.date}</td>
+                                    <td style="padding:8px;border:1px solid #dee2e6;">${r.time}</td>
+                                    <td style="padding:8px;border:1px solid #dee2e6;">${r.timing}</td>
+                                    <td style="padding:8px;border:1px solid #dee2e6;font-weight:bold;">${r.value} mg/dL</td>
+                                    <td style="padding:8px;border:1px solid #dee2e6;">${statusText}</td>
+                                    <td style="padding:8px;border:1px solid #dee2e6;">${r.note || '-'}</td>
+                                </tr>`;
                             }).join('')}
                         </tbody>
                     </table>
-                    <div style="margin-top: 20px; text-align: center; color: #6c757d; font-size: 10px;">
-                        生成時間：${new Date().toLocaleString('zh-TW')}
+                    <div style="margin-top:20px;text-align:center;color:#6c757d;font-size:10px;">
+                        Generated: ${new Date().toLocaleString('en-GB')}
                     </div>
-                </div>
-            `;
-            
+                </div>`;
+
             container.innerHTML = tableHtml;
-            const tableElement = container.querySelector('.pdf-report');
-            const tableCanvas = await html2canvas(tableElement, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
-            
+            const tableEl = container.querySelector('.pdf-report');
+            const tableCanvas = await html2canvas(tableEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const tableImgData = tableCanvas.toDataURL('image/png');
             const tableImgHeight = tableCanvas.height * imgWidth / tableCanvas.width;
-            
             pdf.addImage(tableImgData, 'PNG', 0, 0, imgWidth, tableImgHeight);
-            
-            // Clean up
+
             container.innerHTML = '';
-            
-            // Save PDF
-            const fileName = `血糖報表_${userProfile.name}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '')}.pdf`;
+            const fileName = `GlucoseReport_${userProfile.name}_${new Date().toLocaleDateString('en-GB').replace(/\//g, '')}.pdf`;
             pdf.save(fileName);
-            
+
         } catch (error) {
             console.error('PDF generation error:', error);
-            alert('PDF 生成失敗，請稍後再試');
+            alert('Failed to generate PDF. Please try again.');
         } finally {
-            event.target.textContent = originalText;
-            event.target.disabled = false;
+            btn.textContent = originalText;
+            btn.disabled = false;
         }
     }
 </script>
